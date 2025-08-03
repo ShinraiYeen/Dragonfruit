@@ -20,4 +20,4 @@ class SongQueueBase : public ComponentBase {
     Component playing_indicator_;
 };
 
-static Component SongQueue(Player& player) { return Make<SongQueueBase>(player); }
+inline Component SongQueue(Player& player) { return Make<SongQueueBase>(player); }

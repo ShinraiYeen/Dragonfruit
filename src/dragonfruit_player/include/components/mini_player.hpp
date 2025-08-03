@@ -21,4 +21,4 @@ class MiniPlayerBase : public ComponentBase {
     Component play_indicator_3_;
 };
 
-static Component MiniPlayer(Player& player) { return Make<MiniPlayerBase>(player); }
+inline Component MiniPlayer(Player& player) { return Make<MiniPlayerBase>(player); }

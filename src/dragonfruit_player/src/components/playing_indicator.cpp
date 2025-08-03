@@ -1,7 +1,7 @@
 #include "components/playing_indicator.hpp"
 
-PlayingIndicatorBase::PlayingIndicatorBase(const std::vector<std::string>& frames, size_t frame_time, int start_frame)
-    : frames_(frames), frame_time_(frame_time), frame_(start_frame) {
+PlayingIndicatorBase::PlayingIndicatorBase(const std::vector<std::string>& frames, int64_t frame_time, int start_frame)
+    : frames_(frames), frame_(start_frame), frame_time_(frame_time) {
     last_tick_ = std::chrono::steady_clock::now();
 }
 

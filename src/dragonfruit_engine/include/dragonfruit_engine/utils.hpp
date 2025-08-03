@@ -13,7 +13,7 @@ namespace dragonfruit::utils {
  * @param bit_depth the bit depth of the sample data.
  * @return A pa_sample_format based on the given parameters.
  */
-static pa_sample_format GetPulseFormat(WavFormatCode fmt_code, int bit_depth) {
+inline pa_sample_format GetPulseFormat(WavFormatCode fmt_code, int bit_depth) {
     switch (fmt_code) {
         case WavFormatCode::PCM: {
             switch (bit_depth) {

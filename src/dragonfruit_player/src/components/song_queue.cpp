@@ -10,9 +10,9 @@ Element SongQueueBase::OnRender() {
     std::vector<Element> elements;
 
     std::vector<std::filesystem::path>& queue = player_.GetSongQueue();
-    int cur_idx = player_.GetCurrentSongIdx();
+    size_t cur_idx = player_.GetCurrentSongIdx();
 
-    for (int i = 0; i < queue.size(); i++) {
+    for (size_t i = 0; i < queue.size(); i++) {
         Element song_entry = text(std::format("{}. {}", i + 1, queue[i].filename().string()));
 
         // Add additional decorators if this is the currently playing song

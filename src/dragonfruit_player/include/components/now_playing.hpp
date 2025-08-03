@@ -18,4 +18,4 @@ class NowPlayingBase : public ComponentBase {
     Player& player_;
 };
 
-static Component NowPlaying(Player& player) { return Make<NowPlayingBase>(player); }
+inline Component NowPlaying(Player& player) { return Make<NowPlayingBase>(player); }

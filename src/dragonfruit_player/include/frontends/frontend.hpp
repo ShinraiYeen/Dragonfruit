@@ -8,7 +8,7 @@
  */
 class Frontend {
    public:
-    ~Frontend() = default;
+    virtual ~Frontend() = default;
 
     /**
      * @brief Starts the main frontend loop. Blocks until the frontend exits.

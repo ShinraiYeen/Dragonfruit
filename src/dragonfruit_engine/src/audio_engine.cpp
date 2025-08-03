@@ -15,11 +15,13 @@ namespace dragonfruit {
 
 // Callback for context state changes
 void ContextStateCallback(pa_context* context, void* userdata) {
+    (void)context;  // Suppress unused warning
     pa_threaded_mainloop_signal(reinterpret_cast<pa_threaded_mainloop*>(userdata), 0);
 }
 
 // Callback for stream state changes
 void StreamStateCallback(pa_stream* stream, void* userdata) {
+    (void)stream;  // Suppress unused warning
     pa_threaded_mainloop_signal(static_cast<pa_threaded_mainloop*>(userdata), 0);
 }
 
