@@ -2,6 +2,8 @@
 
 A CLI music player built using PulseAudio and FTXUI.
 
+![Dragonfruit](images/dragonfruit.png)
+
 ## Building from source
 
 Prebuilt packages are not available for Dragonfruit. Building the project from source is required.
