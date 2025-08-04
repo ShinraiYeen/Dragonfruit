@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(dragonfruit-player VERSION 0.1 LANGUAGES CXX)
+project(dragonfruit-player VERSION 0.1.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -42,3 +42,33 @@ target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
 
 # Set installation rules
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION "bin")
+
+# CPack configuration
+include(InstallRequiredSystemLibraries)
+set(CPACK_GENERATOR "DEB")
+
+# Package information
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT "shinrai.wolf@outlook.com")
+set(CPACK_PACKAGE_DESCRIPTION "A CLI music player.")
+set(CPACK_PACKAGE_VENDOR "ShinraiYeen")
+
+# Debian-specific package information
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "ShinraiYeen")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpulse0")
+set(CPACK_DEBIAN_PACKAGE_SECTION "sound")
+
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "i.86")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "i386")
+else()
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+
+include(CPack)
