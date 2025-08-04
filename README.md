@@ -1,6 +1,6 @@
 # Dragonfruit
 
-A CLI music player built using PulseAudio and FTXUI.
+A CLI music player built using PulseAudio and [FTXUI](https://github.com/ArthurSonzogni/FTXUI).
 
 ![Dragonfruit](images/dragonfruit.png)
 
