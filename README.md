@@ -55,6 +55,15 @@ dragonfruit-player <path> [<path> ...]
 
 Where path is either a `.wav` file or directories containing `.wav` files. Multiple arguments can be used to add multiple songs/directories into the song queue.
 
+### Player Controls
+- `TAB` cycles through the available menus. Alternatively, you can click on these menu options with a mouse.
+- `Right arrow` skips to the next song.
+- `Left arrow` skips to the previous song.
+- `Space` pauses the current song.
+- `,` seeks backward through the current song.
+- `.` seeks forward through the current song.
+- `s` shuffles the song queue and restarts from the beginning.
+
 ### Lost?
 `dragonfruit-player --help` will display a more detailed help page with some usage examples.
 
