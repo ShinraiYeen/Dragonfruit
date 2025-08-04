@@ -4,6 +4,14 @@ A CLI music player built using PulseAudio and FTXUI.
 
 ![Dragonfruit](images/dragonfruit.png)
 
+> [!NOTE]
+> The song displayed in the above image is [Acidjazzed Evening (Pico-8 Cover)](https://www.youtube.com/watch?v=4xCEKbbe6WA) by [Lun9](https://www.youtube.com/@Lu9sMusic). Check their stuff out! The original song is Acidjazzed Evening by Janne (Tempest) Suni.
+
+> [!WARNING]
+> This project is early into development and is mostly for the learning experience and as a fun side project. The audio engine is built from scratch, and so many codecs will be unsupported/unstable. Currently, only WAV is partially supported.
+>
+> This isn't the cleanest code I've written. Adjust expectations accordingly.
+
 ## Building from source
 
 Prebuilt packages are not available for Dragonfruit. Building the project from source is required.
@@ -38,3 +46,19 @@ After building the project, Dragonfruit can be installed using the following:
 make install
 ```
 
+## Usage
+
+### Starting a Song
+```bash
+dragonfruit-player <path> [<path> ...]
+```
+
+Where path is either a `.wav` file or directories containing `.wav` files. Multiple arguments can be used to add multiple songs/directories into the song queue.
+
+### Lost?
+`dragonfruit-player --help` will display a more detailed help page with some usage examples.
+
+## Features
+- WAV audio support. Supports most common WAV formats such as PCM 16/24/32-bit and IEEE-Float 32/64-bit.
+- Song queues. Multiple songs can be queued up to play in a loop.
+- Seeking through, playing, and pausing audio.

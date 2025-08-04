@@ -25,10 +25,16 @@ void DisplayHelpMessage(char** argv) {
     DisplayUsageMessage(argv);
     printf("\n");
     printf("Arguments:\n");
-    printf("  <path>            One or more files/directories containing music to play.\n\n");
+    printf("  <path>:           One or more files/directories containing music to play.\n");
+    printf("                    Playing a directory will collect all valid song files in\n");
+    printf("                    that directory and add them to the song queue.\n\n");
     printf("Options:\n");
     printf("  -h, --help:       Displays this help message and exits.\n");
-    printf("  -v, --version:    Displays the version number and exits.\n");
+    printf("  -v, --version:    Displays the version number and exits.\n\n");
+    printf("Usage Examples:\n");
+    printf("  Playing a single song:\n    %s song.wav\n", argv[0]);
+    printf("  Playing songs from a directory:\n    %s dir\n", argv[0]);
+    printf("  Playing multiple songs/directories:\n    %s song.wav dir\n", argv[0]);
 }
 
 void DisplayVersion() {
@@ -57,7 +63,8 @@ int main(int argc, char** argv) {
     }
 
     if (song_paths.empty()) {
-        fprintf(stderr, "No valid song files provided, quitting.\n");
+        fprintf(stderr, "No valid song files found, quitting.\n");
+        DisplayUsageMessage(argv);
         return EXIT_FAILURE;
     }
 
