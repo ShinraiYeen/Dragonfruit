@@ -1,5 +1,9 @@
 # Dragonfruit
 
+![GitHub License](https://img.shields.io/github/license/ShinraiYeen/Dragonfruit) ![GitHub Tag](https://img.shields.io/github/v/tag/ShinraiYeen/Dragonfruit)
+ ![GitHub repo size](https://img.shields.io/github/repo-size/ShinraiYeen/Dragonfruit) ![GitHub last commit](https://img.shields.io/github/last-commit/ShinraiYeen/Dragonfruit)
+
+
 A CLI music player built using PulseAudio and [FTXUI](https://github.com/ArthurSonzogni/FTXUI).
 
 ![Dragonfruit](images/dragonfruit.png)
