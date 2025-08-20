@@ -63,7 +63,7 @@ AudioEngine::AudioEngine() {
 
     // Create context for threaded mainloop
     m_mainloop_api = pa_threaded_mainloop_get_api(m_mainloop);
-    m_context = pa_context_new(m_mainloop_api, "dragonfruit-engine");
+    m_context = pa_context_new(m_mainloop_api, "Dragonfruit");
     if (!m_context) { throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to create pulse context"); }
 
     pa_context_set_state_callback(m_context, ContextStateCallback, m_mainloop);
