@@ -32,7 +32,7 @@ class Player {
      * @return true if the song is paused.
      * @return false otherwise.
      */
-    inline bool IsPaused() { return m_paused; };
+    inline bool IsPaused() { return m_engine.IsPaused(); };
 
     /**
      * @brief Start playing the song at a given index into the song queue. In the case of an overflow (the index being
@@ -122,6 +122,5 @@ class Player {
     int m_cur_song_idx = 0;
     std::shared_ptr<dragonfruit::Sound> m_cur_sound;
 
-    bool m_paused = false;
     double m_cur_volume = 1.0;
 };

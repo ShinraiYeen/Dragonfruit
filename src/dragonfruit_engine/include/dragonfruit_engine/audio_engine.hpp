@@ -31,6 +31,7 @@ class AudioEngine {
     double GetCurrentSongTime();
     void Seek(double seconds);
     void SetVolume(double volume);
+    bool IsPaused();
 
    private:
     // PulseAudio state variables

@@ -254,4 +254,12 @@ void AudioEngine::SetVolume(double volume) {
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
+bool AudioEngine::IsPaused() {
+    pa_threaded_mainloop_lock(m_mainloop);
+    int paused = pa_stream_is_corked(m_stream);
+    pa_threaded_mainloop_unlock(m_mainloop);
+
+    return paused < 1 ? false : true;
+}
+
 }  // namespace dragonfruit

@@ -8,13 +8,9 @@ Player::Player(const std::vector<std::filesystem::path>& song_files) : m_song_pa
 
 Player::~Player() {}
 
-void Player::Pause(bool pause) {
-    m_paused = pause;
-    m_engine.Pause(pause);
-}
+void Player::Pause(bool pause) { m_engine.Pause(pause); }
 
 void Player::Play(int idx) {
-    m_paused = false;
     int clamped_idx = std::clamp(idx, 0, static_cast<int>(m_song_paths.size()) - 1);
     m_cur_song_idx = clamped_idx;
 
@@ -27,7 +23,6 @@ void Player::Play(int idx) {
 }
 
 void Player::PlayRelative(int delta) {
-    m_paused = false;
     int total_songs = m_song_paths.size();
     int wrapped_idx = ((m_cur_song_idx + delta) % total_songs + total_songs) % total_songs;
     Play(wrapped_idx);
