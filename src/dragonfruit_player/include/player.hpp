@@ -32,7 +32,7 @@ class Player {
      * @return true if the song is paused.
      * @return false otherwise.
      */
-    inline bool IsPaused() { return paused_; };
+    inline bool IsPaused() { return m_paused; };
 
     /**
      * @brief Start playing the song at a given index into the song queue. In the case of an overflow (the index being
@@ -79,28 +79,28 @@ class Player {
      * @return true if the currently playing song has finished playing.
      * @return false if the currently playing song has not finished playing.
      */
-    inline bool IsFinished() { return engine_.IsFinished(); }
+    inline bool IsFinished() { return m_engine.IsFinished(); }
 
     /**
      * @brief Get a list of the songs. This queue contains the filepaths of each song which is in this player's queue.
      *
      * @return A list filepaths for queued songs.
      */
-    inline std::vector<std::filesystem::path>& GetSongQueue() { return song_paths_; }
+    inline std::vector<std::filesystem::path>& GetSongQueue() { return m_song_paths; }
 
     /**
      * @brief Get the index of the currently playing song in the queue.
      *
      * @return The index of the currently playing song in the queue.
      */
-    inline int GetCurrentSongIdx() { return cur_song_idx_; }
+    inline int GetCurrentSongIdx() { return m_cur_song_idx; }
 
     /**
      * @brief Get the currently playing song. This pointer will be empty if no song has been played yet.
      *
      * @return A shared pointer to the currently playing song.
      */
-    inline std::shared_ptr<dragonfruit::Sound> GetCurrentSong() { return cur_sound_; }
+    inline std::shared_ptr<dragonfruit::Sound> GetCurrentSong() { return m_cur_sound; }
 
     /**
      * @brief Shuffles the queue and restarts playback at the first song.
@@ -116,12 +116,12 @@ class Player {
     void SetVolume(double volume);
 
    private:
-    dragonfruit::AudioEngine engine_;
-    std::vector<std::filesystem::path> song_paths_;
+    dragonfruit::AudioEngine m_engine;
+    std::vector<std::filesystem::path> m_song_paths;
 
-    int cur_song_idx_ = 0;
-    std::shared_ptr<dragonfruit::Sound> cur_sound_;
+    int m_cur_song_idx = 0;
+    std::shared_ptr<dragonfruit::Sound> m_cur_sound;
 
-    bool paused_ = false;
-    double cur_volume_ = 1.0;
+    bool m_paused = false;
+    double m_cur_volume = 1.0;
 };

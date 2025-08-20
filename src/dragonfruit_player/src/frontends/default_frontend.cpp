@@ -14,13 +14,13 @@ void DefaultFrontend::Start() {
     using namespace ftxui;
 
     // Immediately begin playing the first song
-    player_.Play(0);
-    player_.SetVolume(1.0);
+    m_player.Play(0);
+    m_player.SetVolume(1.0);
 
     // Construct sub components
-    auto now_playing = NowPlaying(player_);
-    auto song_queue = SongQueue(player_);
-    auto mini_player = MiniPlayer(player_);
+    auto now_playing = NowPlaying(m_player);
+    auto song_queue = SongQueue(m_player);
+    auto mini_player = MiniPlayer(m_player);
 
     // Construct the main menu
     std::vector<Component> screens = {now_playing, song_queue};
@@ -52,25 +52,25 @@ void DefaultFrontend::Start() {
 
     component |= CatchEvent([&](Event event) -> bool {
         if (event == Event::Character(' ')) {
-            player_.Pause(!player_.IsPaused());
+            m_player.Pause(!m_player.IsPaused());
             return true;
         } else if (event == Event::Escape || event == Event::Character('q')) {
             screen.Exit();
             return true;
         } else if (event == Event::ArrowRight) {
-            player_.PlayRelative(1);
+            m_player.PlayRelative(1);
             return true;
         } else if (event == Event::ArrowLeft) {
-            player_.PlayRelative(-1);
+            m_player.PlayRelative(-1);
             return true;
         } else if (event == Event::Character(",")) {
-            player_.Seek(-5.0);
+            m_player.Seek(-5.0);
             return true;
         } else if (event == Event::Character(".")) {
-            player_.Seek(5.0);
+            m_player.Seek(5.0);
             return true;
         } else if (event == Event::Character("s")) {
-            player_.Shuffle();
+            m_player.Shuffle();
             return true;
         }
         return false;
@@ -84,6 +84,6 @@ void DefaultFrontend::Start() {
         screen.RequestAnimationFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        if (player_.IsFinished()) { player_.PlayRelative(1); }
+        if (m_player.IsFinished()) { m_player.PlayRelative(1); }
     }
 }

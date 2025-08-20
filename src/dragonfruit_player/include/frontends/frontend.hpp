@@ -17,7 +17,7 @@ class Frontend {
     virtual void Start() = 0;
 
    protected:
-    Frontend(Player& player) : player_(player) {}
+    Frontend(Player& player) : m_player(player) {}
     // A reference to the main Player object is required to make calls to the backend audio engine.
-    Player& player_;
+    Player& m_player;
 };

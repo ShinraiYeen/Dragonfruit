@@ -2,15 +2,15 @@
 
 #include "components/progress_animations.hpp"
 
-SongQueueBase::SongQueueBase(Player& player) : player_(player) {
+SongQueueBase::SongQueueBase(Player& player) : m_player(player) {
     playing_indicator_ = PlayingIndicator(ProgressAnimations::DOTS1, 80);
 }
 
 Element SongQueueBase::OnRender() {
     std::vector<Element> elements;
 
-    std::vector<std::filesystem::path>& queue = player_.GetSongQueue();
-    size_t cur_idx = player_.GetCurrentSongIdx();
+    std::vector<std::filesystem::path>& queue = m_player.GetSongQueue();
+    size_t cur_idx = m_player.GetCurrentSongIdx();
 
     for (size_t i = 0; i < queue.size(); i++) {
         Element song_entry = text(std::format("{}. {}", i + 1, queue[i].filename().string()));

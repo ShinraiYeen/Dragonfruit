@@ -16,7 +16,7 @@ class SongQueueBase : public ComponentBase {
     Element OnRender() override;
 
    private:
-    Player& player_;
+    Player& m_player;
     Component playing_indicator_;
 };
 

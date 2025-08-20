@@ -12,10 +12,10 @@ class PlayingIndicatorBase : public ComponentBase {
     Element OnRender() override;
 
    private:
-    std::vector<std::string> frames_;
-    int frame_ = 0;
-    int64_t frame_time_;
-    std::chrono::steady_clock::time_point last_tick_;
+    std::vector<std::string> m_frames;
+    int m_frame = 0;
+    int64_t m_frame_time;
+    std::chrono::steady_clock::time_point m_last_tick;
 };
 
 inline Component PlayingIndicator(const std::vector<std::string>& frames, size_t frame_time = 150,

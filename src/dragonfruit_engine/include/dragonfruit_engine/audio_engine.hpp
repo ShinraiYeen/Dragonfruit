@@ -34,14 +34,14 @@ class AudioEngine {
 
    private:
     // PulseAudio state variables
-    pa_threaded_mainloop* mainloop_ = nullptr;
-    pa_mainloop_api* mainloop_api_ = nullptr;
-    pa_context* context_ = nullptr;
-    pa_stream* stream_ = nullptr;
-    pa_sample_spec sample_spec_;
-    uint32_t sink_idx_ = 0;
+    pa_threaded_mainloop* m_mainloop = nullptr;
+    pa_mainloop_api* m_mainloop_api = nullptr;
+    pa_context* m_context = nullptr;
+    pa_stream* m_stream = nullptr;
+    pa_sample_spec m_sample_spec;
+    uint32_t m_sink_idx = 0;
 
     // Keeps track of the state of the currently playing song
-    EngineState engine_state_;
+    EngineState m_engine_state;
 };
 }  // namespace dragonfruit

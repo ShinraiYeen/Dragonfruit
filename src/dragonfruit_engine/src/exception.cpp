@@ -15,7 +15,7 @@ static const std::string ErrorCodeToString(ErrorCode code) {
     }
 }
 
-const char* Exception::what() const noexcept { return message_.c_str(); }
+const char* Exception::what() const noexcept { return m_message.c_str(); }
 
-const std::string Exception::GetErrorCodeString() const noexcept { return ErrorCodeToString(error_code_); }
+const std::string Exception::GetErrorCodeString() const noexcept { return ErrorCodeToString(m_error_code); }
 }  // namespace dragonfruit

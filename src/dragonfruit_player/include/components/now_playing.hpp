@@ -10,12 +10,12 @@ using namespace ftxui;
 
 class NowPlayingBase : public ComponentBase {
    public:
-    NowPlayingBase(Player& player) : player_(player) {}
+    NowPlayingBase(Player& player) : m_player(player) {}
 
     Element OnRender() override;
 
    private:
-    Player& player_;
+    Player& m_player;
 };
 
 inline Component NowPlaying(Player& player) { return Make<NowPlayingBase>(player); }

@@ -15,10 +15,10 @@ class MiniPlayerBase : public ComponentBase {
     Element OnRender() override;
 
    private:
-    Player& player_;
-    Component play_indicator_1_;
-    Component play_indicator_2_;
-    Component play_indicator_3_;
+    Player& m_player;
+    Component m_play_indicator_1;
+    Component m_play_indicator_2;
+    Component m_play_indicator_3;
 };
 
 inline Component MiniPlayer(Player& player) { return Make<MiniPlayerBase>(player); }

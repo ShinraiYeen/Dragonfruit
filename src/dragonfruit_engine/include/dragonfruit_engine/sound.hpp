@@ -61,35 +61,35 @@ class Sound {
      *
      * @return Number of channels.
      */
-    inline ushort Channels() const { return channels_; }
+    inline ushort Channels() const { return m_channels; }
 
     /**
      * @brief Returns the bit depth of a sample.
      *
      * @return Bit depth of a sample.
      */
-    inline ushort BitDepth() const { return bit_depth_; }
+    inline ushort BitDepth() const { return m_bit_depth; }
 
     /**
      * @brief Returns the sample rate in Hz.
      *
      * @return The sample rate in Hz
      */
-    inline uint32_t SampleRate() const { return sample_rate_; }
+    inline uint32_t SampleRate() const { return m_sample_rate; }
 
     /**
      * @brief Returns a pointer to the sample data.
      *
      * @return Pointer to sample data.
      */
-    inline const char* SampleData() const { return sample_data_.data(); }
+    inline const char* SampleData() const { return m_sample_data.data(); }
 
     /**
      * @brief Returns the size in bytes of the sample data.
      *
      * @return Size in bytes of the sample data.
      */
-    inline uint32_t SampleDataSize() const { return sample_data_.size(); }
+    inline uint32_t SampleDataSize() const { return m_sample_data.size(); }
 
     /**
      * @brief Returns the value of an INFO metadata tag if it exists. If it does not exist, returns an empty string.
@@ -148,7 +148,7 @@ class Sound {
      */
     inline std::string TrackNumber() const { return Metadata("ITRK"); }
 
-    inline WavFormatCode Format() const { return format_; }
+    inline WavFormatCode Format() const { return m_format; }
 
    private:
     bool ReadChunk(std::ifstream& file);
@@ -158,14 +158,14 @@ class Sound {
     void HandleListChunk(std::ifstream& file, size_t size);
     void HandleUnknownChunk(std::ifstream& file, size_t size);
 
-    std::unordered_map<std::string, std::string> info_tags_;
+    std::unordered_map<std::string, std::string> m_info_tags;
 
     // WAV format information
-    unsigned int sample_rate_;
-    unsigned short channels_;
-    unsigned short bit_depth_;
-    WavFormatCode format_;
+    unsigned int m_sample_rate;
+    unsigned short m_channels;
+    unsigned short m_bit_depth;
+    WavFormatCode m_format;
 
-    std::vector<char> sample_data_;
+    std::vector<char> m_sample_data;
 };
 }  // namespace dragonfruit
