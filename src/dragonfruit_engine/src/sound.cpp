@@ -54,12 +54,12 @@ void Sound::HandleFmtChunk(std::ifstream& file, size_t size) {
 
     FmtChunk chunk;
     file.read(reinterpret_cast<char*>(&chunk), sizeof(chunk));
-    channels_ = chunk.num_channels;
-    sample_rate_ = chunk.frequency;
-    bit_depth_ = chunk.bits_per_sample;
+    m_channels = chunk.num_channels;
+    m_sample_rate = chunk.frequency;
+    m_bit_depth = chunk.bits_per_sample;
 
     // Determine audio format
-    format_ = GetWavFormatCode(chunk.audio_format);
+    m_format = GetWavFormatCode(chunk.audio_format);
 
     // Check for extension if size is above 16 bytes
     if (size <= 16) return;
@@ -72,12 +72,12 @@ void Sound::HandleFmtChunk(std::ifstream& file, size_t size) {
     FmtExtendedChunk extendedChunk;
     file.read(reinterpret_cast<char*>(&extendedChunk), sizeof(extendedChunk));
 
-    format_ = GetWavFormatCode(extendedChunk.sub_format[1] << 8 | extendedChunk.sub_format[0]);
+    m_format = GetWavFormatCode(extendedChunk.sub_format[1] << 8 | extendedChunk.sub_format[0]);
 }
 
 void Sound::HandleDataChunk(std::ifstream& file, size_t size) {
-    sample_data_.resize(size);
-    file.read(sample_data_.data(), size);
+    m_sample_data.resize(size);
+    file.read(reinterpret_cast<char*>(m_sample_data.data()), size);
 }
 
 void Sound::HandleListChunk(std::ifstream& file, size_t size) {
@@ -91,7 +91,7 @@ void Sound::HandleListChunk(std::ifstream& file, size_t size) {
 
         std::string value(tag.size, '\0');
         file.read(&value[0], tag.size);
-        info_tags_[std::string(tag.id, 4)] = value;
+        m_info_tags[std::string(tag.id, 4)] = value;
 
         // Seek past padding if tag.size is odd
         if (tag.size % 2 != 0) {
@@ -130,12 +130,16 @@ void Sound::ParseChunk(ChunkHeader header, std::ifstream& file) {
     }
 
     // If chunk size was odd, we need to seek past the 1-byte padding
-    if (header.size % 2 != 0) { file.seekg(1, std::ios::cur); }
+    if (header.size % 2 != 0) {
+        file.seekg(1, std::ios::cur);
+    }
 }
 
 bool Sound::ReadChunk(std::ifstream& file) {
     // Immediately return false if we're at the end of the file
-    if (file.peek() == EOF) { return false; }
+    if (file.peek() == EOF) {
+        return false;
+    }
 
     // Read chunk header first
     ChunkHeader header;
@@ -147,8 +151,10 @@ bool Sound::ReadChunk(std::ifstream& file) {
 }
 
 std::string Sound::Metadata(std::string tag) const {
-    if (!info_tags_.contains(tag)) { return ""; }
+    if (!m_info_tags.contains(tag)) {
+        return "";
+    }
 
-    return info_tags_.at(tag);
+    return m_info_tags.at(tag);
 }
 }  // namespace dragonfruit

@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.14)
-project(dragonfruit-player VERSION 0.1.1 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.24)
+project(dragonfruit-player VERSION 0.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
@@ -15,6 +16,13 @@ message(STATUS "    Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "    Cmake Version: ${CMAKE_VERSION}")
 message(STATUS "    System: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "    Processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
+# Generate version code
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.hpp"
+    @ONLY
+)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/dragonfruit_player/src/*.cpp"
@@ -34,7 +42,7 @@ FetchContent_MakeAvailable(ftxui)
 add_subdirectory("src/dragonfruit_engine")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE "src/dragonfruit_player/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "src/dragonfruit_player/include" "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(${PROJECT_NAME} PRIVATE dragonfruit-engine ftxui::component ftxui::screen ftxui::dom)
 
 # Enable all warnings

@@ -8,17 +8,16 @@
 
 using namespace ftxui;
 
-class MiniPlayerBase : public ComponentBase {
+class EqualizerBase : public ComponentBase {
    public:
-    MiniPlayerBase(Player& player);
+    EqualizerBase(Player& player);
 
     Element OnRender() override;
 
    private:
     Player& m_player;
-    Component m_play_indicator_1;
-    Component m_play_indicator_2;
-    Component m_play_indicator_3;
+    Component m_volume_slider;
+    double m_volume_slider_val = 0;
 };
 
-inline Component MiniPlayer(Player& player) { return Make<MiniPlayerBase>(player); }
+inline Component Equalizer(Player& player) { return Make<EqualizerBase>(player); }

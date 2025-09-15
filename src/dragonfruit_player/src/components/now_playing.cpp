@@ -12,11 +12,11 @@ std::string FmtCodeToString(dragonfruit::WavFormatCode code) {
 }
 
 Element NowPlayingBase::OnRender() {
-    std::shared_ptr<dragonfruit::Sound> song = player_.GetCurrentSong();
+    std::shared_ptr<dragonfruit::Sound> song = m_player.GetCurrentSong();
 
     // If the song doesn't have a name (metadata not found) revert to the file name
     std::string song_name =
-        song->Name().empty() ? player_.GetSongQueue()[player_.GetCurrentSongIdx()].filename().string() : song->Name();
+        song->Name().empty() ? m_player.GetSongQueue()[m_player.GetCurrentSongIdx()].filename().string() : song->Name();
     return vbox({
         filler(),
         paragraph(song_name) | hcenter,
