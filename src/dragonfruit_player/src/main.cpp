@@ -37,9 +37,7 @@ void DisplayHelpMessage(char** argv) {
     printf("  Playing multiple songs/directories:\n    %s song.wav dir\n", argv[0]);
 }
 
-void DisplayVersion() {
-    printf("Dragonfruit v%d.%d.%d\n", DRAGONFRUIT_VERSION_MAJOR, DRAGONFRUIT_VERSION_MINOR, DRAGONFRUIT_VERSION_PATCH);
-}
+void DisplayVersion() { printf("Dragonfruit v%s\n", DRAGONFRUIT_VERSION); }
 
 int main(int argc, char** argv) {
     std::vector<std::filesystem::path> song_paths;
