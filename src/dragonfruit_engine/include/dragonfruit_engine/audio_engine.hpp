@@ -31,6 +31,7 @@ class AudioEngine {
     double GetCurrentSongTime();
     void Seek(double seconds);
     void SetVolume(double volume);
+    double GetVolume();
     bool IsPaused();
 
    private:
@@ -44,5 +45,7 @@ class AudioEngine {
 
     // Keeps track of the state of the currently playing song
     EngineState m_engine_state;
+
+    double m_volume = 1.0;
 };
 }  // namespace dragonfruit

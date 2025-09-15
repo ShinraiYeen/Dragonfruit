@@ -15,7 +15,7 @@ void DefaultFrontend::Start() {
 
     // Immediately begin playing the first song
     m_player.Play(0);
-    m_player.SetVolume(1.0);
+    m_player.SetVolume(0.5);
 
     // Construct sub components
     auto now_playing = NowPlaying(m_player);
@@ -84,6 +84,8 @@ void DefaultFrontend::Start() {
         screen.RequestAnimationFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        if (m_player.IsFinished()) { m_player.PlayRelative(1); }
+        if (m_player.IsFinished()) {
+            m_player.PlayRelative(1);
+        }
     }
 }
