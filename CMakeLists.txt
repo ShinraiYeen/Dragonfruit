@@ -17,6 +17,13 @@ message(STATUS "    Cmake Version: ${CMAKE_VERSION}")
 message(STATUS "    System: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "    Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
+# Generate version code
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.hpp.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/version.hpp"
+    @ONLY
+)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/dragonfruit_player/src/*.cpp"
 )
@@ -35,7 +42,7 @@ FetchContent_MakeAvailable(ftxui)
 add_subdirectory("src/dragonfruit_engine")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE "src/dragonfruit_player/include")
+target_include_directories(${PROJECT_NAME} PRIVATE "src/dragonfruit_player/include" "${CMAKE_CURRENT_BINARY_DIR}")
 target_link_libraries(${PROJECT_NAME} PRIVATE dragonfruit-engine ftxui::component ftxui::screen ftxui::dom)
 
 # Enable all warnings
