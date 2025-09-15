@@ -262,11 +262,7 @@ void AudioEngine::SetVolume(double volume) {
     pa_cvolume_set(&cvol, m_sample_spec.channels, pa_volume);
     pa_context_set_sink_input_volume(m_context, m_sink_idx, &cvol, nullptr, nullptr);
     pa_threaded_mainloop_unlock(m_mainloop);
-
-    m_volume = volume_clamped;
 }
-
-double AudioEngine::GetVolume() { return m_volume; }
 
 bool AudioEngine::IsPaused() {
     pa_threaded_mainloop_lock(m_mainloop);

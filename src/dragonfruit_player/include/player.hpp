@@ -115,6 +115,13 @@ class Player {
      */
     void SetVolume(double volume);
 
+    /**
+     * @brief Get the current volume of the player.
+     *
+     * @return The current volume of the player.
+     */
+    inline double GetVolume() { return m_cur_volume; }
+
    private:
     dragonfruit::AudioEngine m_engine;
     std::vector<std::filesystem::path> m_song_paths;
