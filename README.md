@@ -9,7 +9,7 @@ A CLI music player built using PulseAudio and [FTXUI](https://github.com/ArthurS
 ![Dragonfruit](images/dragonfruit.png)
 
 > [!NOTE]
-> The song displayed in the above image is [Acidjazzed Evening (Pico-8 Cover)](https://www.youtube.com/watch?v=4xCEKbbe6WA) by [Lun9](https://www.youtube.com/@Lu9sMusic). Check their stuff out! The original song is Acidjazzed Evening by Janne (Tempest) Suni.
+> The song displayed in the above image is [Acidjazzed Evening (Pico-8 Cover)](https://www.youtube.com/watch?v=4xCEKbbe6WA) by [Lu9](https://www.youtube.com/@Lu9sMusic). Check their stuff out! The original song is Acidjazzed Evening by Janne (Tempest) Suni.
 
 > [!WARNING]
 > This project is early into development and is mostly for the learning experience and as a fun side project. The audio engine is built from scratch, and so many codecs will be unsupported/unstable. Currently, only WAV is partially supported.
