@@ -19,12 +19,12 @@ struct ChunkHeader {
 } __attribute__((packed));
 
 struct FmtChunk {
-    ushort audio_format;
-    ushort num_channels;
+    uint16_t audio_format;
+    uint16_t num_channels;
     uint32_t frequency;
     uint32_t bytes_per_sec;
-    ushort bytes_per_bloc;
-    ushort bits_per_sample;
+    uint16_t bytes_per_bloc;
+    uint16_t bits_per_sample;
 } __attribute__((packed));
 
 struct FmtExtendedChunk {
@@ -61,14 +61,14 @@ class Sound {
      *
      * @return Number of channels.
      */
-    inline ushort Channels() const { return m_channels; }
+    inline uint16_t Channels() const { return m_channels; }
 
     /**
      * @brief Returns the bit depth of a sample.
      *
      * @return Bit depth of a sample.
      */
-    inline ushort BitDepth() const { return m_bit_depth; }
+    inline uint16_t BitDepth() const { return m_bit_depth; }
 
     /**
      * @brief Returns the sample rate in Hz.
@@ -82,7 +82,7 @@ class Sound {
      *
      * @return Pointer to sample data.
      */
-    inline const char* SampleData() const { return m_sample_data.data(); }
+    inline const uint8_t* SampleData() const { return m_sample_data.data(); }
 
     /**
      * @brief Returns the size in bytes of the sample data.
@@ -162,10 +162,10 @@ class Sound {
 
     // WAV format information
     unsigned int m_sample_rate;
-    unsigned short m_channels;
-    unsigned short m_bit_depth;
+    uint16_t m_channels;
+    uint16_t m_bit_depth;
     WavFormatCode m_format;
 
-    std::vector<char> m_sample_data;
+    std::vector<uint8_t> m_sample_data;
 };
 }  // namespace dragonfruit

@@ -47,7 +47,9 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 
         while (true) {
             pa_stream_state_t state = pa_stream_get_state(stream);
-            if (state == PA_STREAM_TERMINATED || state == PA_STREAM_FAILED) { break; }
+            if (state == PA_STREAM_TERMINATED || state == PA_STREAM_FAILED) {
+                break;
+            }
 
             pa_threaded_mainloop_wait(mainloop);
         }
@@ -59,12 +61,16 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 AudioEngine::AudioEngine() {
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
-    if (!m_mainloop) { throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to inqitialize pulse main loop"); }
+    if (!m_mainloop) {
+        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to inqitialize pulse main loop");
+    }
 
     // Create context for threaded mainloop
     m_mainloop_api = pa_threaded_mainloop_get_api(m_mainloop);
     m_context = pa_context_new(m_mainloop_api, "Dragonfruit");
-    if (!m_context) { throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to create pulse context"); }
+    if (!m_context) {
+        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to create pulse context");
+    }
 
     pa_context_set_state_callback(m_context, ContextStateCallback, m_mainloop);
 
@@ -85,7 +91,9 @@ AudioEngine::AudioEngine() {
     // the mainloop once it has been called.
     while (true) {
         pa_context_state_t state = pa_context_get_state(m_context);
-        if (state == PA_CONTEXT_READY) { break; }
+        if (state == PA_CONTEXT_READY) {
+            break;
+        }
 
         if (state == PA_CONTEXT_FAILED || state == PA_CONTEXT_TERMINATED) {
             pa_threaded_mainloop_unlock(m_mainloop);
@@ -153,7 +161,9 @@ void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
     // Wait for stream to be ready
     while (true) {
         pa_stream_state_t state = pa_stream_get_state(m_stream);
-        if (state == PA_STREAM_READY) { break; }
+        if (state == PA_STREAM_READY) {
+            break;
+        }
 
         if (state == PA_STREAM_FAILED || state == PA_STREAM_TERMINATED) {
             pa_threaded_mainloop_unlock(m_mainloop);

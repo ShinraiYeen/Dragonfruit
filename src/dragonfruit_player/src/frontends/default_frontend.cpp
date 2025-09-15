@@ -6,6 +6,7 @@
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
 
+#include "components/equalizer.hpp"
 #include "components/mini_player.hpp"
 #include "components/now_playing.hpp"
 #include "components/song_queue.hpp"
@@ -21,11 +22,12 @@ void DefaultFrontend::Start() {
     auto now_playing = NowPlaying(m_player);
     auto song_queue = SongQueue(m_player);
     auto mini_player = MiniPlayer(m_player);
+    auto equalizer = Equalizer(m_player);
 
     // Construct the main menu
-    std::vector<Component> screens = {now_playing, song_queue};
-    int main_menu_idx;
-    const std::vector<std::string> menu_options = {"Now Playing", "Queue"};
+    std::vector<Component> screens = {now_playing, song_queue, equalizer};
+    int main_menu_idx = 0;
+    const std::vector<std::string> menu_options = {"Now Playing", "Queue", "Equalizer"};
     auto menu = Menu(menu_options, &main_menu_idx, MenuOption::HorizontalAnimated());
 
     // Construct the component layout to pass into the renderer
@@ -34,6 +36,7 @@ void DefaultFrontend::Start() {
         now_playing,
         song_queue,
         mini_player,
+        equalizer,
     });
 
     auto screen = ScreenInteractive::Fullscreen();
@@ -84,6 +87,8 @@ void DefaultFrontend::Start() {
         screen.RequestAnimationFrame();
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-        if (m_player.IsFinished()) { m_player.PlayRelative(1); }
+        if (m_player.IsFinished()) {
+            m_player.PlayRelative(1);
+        }
     }
 }
