@@ -77,7 +77,7 @@ void Sound::HandleFmtChunk(std::ifstream& file, size_t size) {
 
 void Sound::HandleDataChunk(std::ifstream& file, size_t size) {
     m_sample_data.resize(size);
-    file.read(m_sample_data.data(), size);
+    file.read(reinterpret_cast<char*>(m_sample_data.data()), size);
 }
 
 void Sound::HandleListChunk(std::ifstream& file, size_t size) {
@@ -130,12 +130,16 @@ void Sound::ParseChunk(ChunkHeader header, std::ifstream& file) {
     }
 
     // If chunk size was odd, we need to seek past the 1-byte padding
-    if (header.size % 2 != 0) { file.seekg(1, std::ios::cur); }
+    if (header.size % 2 != 0) {
+        file.seekg(1, std::ios::cur);
+    }
 }
 
 bool Sound::ReadChunk(std::ifstream& file) {
     // Immediately return false if we're at the end of the file
-    if (file.peek() == EOF) { return false; }
+    if (file.peek() == EOF) {
+        return false;
+    }
 
     // Read chunk header first
     ChunkHeader header;
@@ -147,7 +151,9 @@ bool Sound::ReadChunk(std::ifstream& file) {
 }
 
 std::string Sound::Metadata(std::string tag) const {
-    if (!m_info_tags.contains(tag)) { return ""; }
+    if (!m_info_tags.contains(tag)) {
+        return "";
+    }
 
     return m_info_tags.at(tag);
 }
