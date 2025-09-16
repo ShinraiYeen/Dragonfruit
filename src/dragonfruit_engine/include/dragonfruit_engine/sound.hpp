@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "dragonfruit_engine/core/io/file_data_source.hpp"
+
 namespace dragonfruit {
 
 enum class WavFormatCode { PCM, IEEE_FLOAT, EXTENSIBLE, UNKNOWN };
@@ -151,12 +153,12 @@ class Sound {
     inline WavFormatCode Format() const { return m_format; }
 
    private:
-    bool ReadChunk(std::ifstream& file);
-    void ParseChunk(ChunkHeader header, std::ifstream& file);
-    void HandleFmtChunk(std::ifstream& file, size_t size);
-    void HandleDataChunk(std::ifstream& file, size_t size);
-    void HandleListChunk(std::ifstream& file, size_t size);
-    void HandleUnknownChunk(std::ifstream& file, size_t size);
+    bool ReadChunk(FileDataSource& file);
+    void ParseChunk(ChunkHeader header, FileDataSource& file);
+    void HandleFmtChunk(FileDataSource& file, size_t size);
+    void HandleDataChunk(FileDataSource& file, size_t size);
+    void HandleListChunk(FileDataSource& file, size_t size);
+    void HandleUnknownChunk(FileDataSource& file, size_t size);
 
     std::unordered_map<std::string, std::string> m_info_tags;
 

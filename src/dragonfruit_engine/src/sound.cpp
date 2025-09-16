@@ -9,18 +9,16 @@
 namespace dragonfruit {
 
 Sound::Sound(const std::string& filepath) {
-    std::ifstream file(filepath.c_str());
+    FileDataSource file(filepath);
 
     // Load RIFF metadata
     RiffChunk chunk;
-    file.read(reinterpret_cast<char*>(&chunk), sizeof(chunk));
+    file.Read(reinterpret_cast<uint8_t*>(&chunk), sizeof(chunk));
     if (std::string(chunk.wav_id, 4) != "WAVE") {
         throw Exception(ErrorCode::INVALID_FORMAT, "File does not start with RIFF chunk");
     }
 
     while (ReadChunk(file));
-
-    file.close();
 }
 
 Sound::~Sound() {}
@@ -47,13 +45,13 @@ WavFormatCode GetWavFormatCode(uint16_t code) {
     }
 }
 
-void Sound::HandleFmtChunk(std::ifstream& file, size_t size) {
+void Sound::HandleFmtChunk(FileDataSource& file, size_t size) {
     if (size != 16 && size != 18 && size != 40) {
         throw Exception(ErrorCode::INVALID_FORMAT, "Malformed fmt chunk in WAV file");
     }
 
     FmtChunk chunk;
-    file.read(reinterpret_cast<char*>(&chunk), sizeof(chunk));
+    file.Read(reinterpret_cast<uint8_t*>(&chunk), sizeof(chunk));
     m_channels = chunk.num_channels;
     m_sample_rate = chunk.frequency;
     m_bit_depth = chunk.bits_per_sample;
@@ -64,38 +62,38 @@ void Sound::HandleFmtChunk(std::ifstream& file, size_t size) {
     // Check for extension if size is above 16 bytes
     if (size <= 16) return;
     uint16_t extensionSize;
-    file.read(reinterpret_cast<char*>(&extensionSize), sizeof(extensionSize));
+    file.Read(reinterpret_cast<uint8_t*>(&extensionSize), sizeof(extensionSize));
 
     if (extensionSize == 0) return;
 
     // Otherwise, we must read the extended fmt data
     FmtExtendedChunk extendedChunk;
-    file.read(reinterpret_cast<char*>(&extendedChunk), sizeof(extendedChunk));
+    file.Read(reinterpret_cast<uint8_t*>(&extendedChunk), sizeof(extendedChunk));
 
     m_format = GetWavFormatCode(extendedChunk.sub_format[1] << 8 | extendedChunk.sub_format[0]);
 }
 
-void Sound::HandleDataChunk(std::ifstream& file, size_t size) {
+void Sound::HandleDataChunk(FileDataSource& file, size_t size) {
     m_sample_data.resize(size);
-    file.read(reinterpret_cast<char*>(m_sample_data.data()), size);
+    file.Read(reinterpret_cast<uint8_t*>(m_sample_data.data()), size);
 }
 
-void Sound::HandleListChunk(std::ifstream& file, size_t size) {
+void Sound::HandleListChunk(FileDataSource& file, size_t size) {
     InfoChunk chunk;
-    file.read(reinterpret_cast<char*>(&chunk), 4);
+    file.Read(reinterpret_cast<uint8_t*>(&chunk), 4);
     uint32_t bytesRead = 4;
 
     while (bytesRead < size) {
         ChunkHeader tag;
-        file.read(reinterpret_cast<char*>(&tag), sizeof(ChunkHeader));
+        file.Read(reinterpret_cast<uint8_t*>(&tag), sizeof(ChunkHeader));
 
         std::string value(tag.size, '\0');
-        file.read(&value[0], tag.size);
+        file.Read(reinterpret_cast<uint8_t*>(&value[0]), tag.size);
         m_info_tags[std::string(tag.id, 4)] = value;
 
         // Seek past padding if tag.size is odd
         if (tag.size % 2 != 0) {
-            file.seekg(1, std::ios::cur);
+            file.Seek(file.Tell() + 1);
             bytesRead++;
         }
 
@@ -103,9 +101,9 @@ void Sound::HandleListChunk(std::ifstream& file, size_t size) {
     }
 }
 
-void Sound::HandleUnknownChunk(std::ifstream& file, size_t size) { file.seekg(size, std::ios::cur); }
+void Sound::HandleUnknownChunk(FileDataSource& file, size_t size) { file.Seek(file.Tell() + size); }
 
-void Sound::ParseChunk(ChunkHeader header, std::ifstream& file) {
+void Sound::ParseChunk(ChunkHeader header, FileDataSource& file) {
     ChunkCode code = GetChunkCode(std::string(header.id, 4));
     switch (code) {
         case ChunkCode::DATA: {
@@ -131,19 +129,19 @@ void Sound::ParseChunk(ChunkHeader header, std::ifstream& file) {
 
     // If chunk size was odd, we need to seek past the 1-byte padding
     if (header.size % 2 != 0) {
-        file.seekg(1, std::ios::cur);
+        file.Seek(file.Tell() + 1);
     }
 }
 
-bool Sound::ReadChunk(std::ifstream& file) {
+bool Sound::ReadChunk(FileDataSource& file) {
     // Immediately return false if we're at the end of the file
-    if (file.peek() == EOF) {
+    if (file.EndOfFile()) {
         return false;
     }
 
     // Read chunk header first
     ChunkHeader header;
-    file.read(reinterpret_cast<char*>(&header), sizeof(header));
+    file.Read(reinterpret_cast<uint8_t*>(&header), sizeof(header));
 
     // Parse chunk
     ParseChunk(header, file);
