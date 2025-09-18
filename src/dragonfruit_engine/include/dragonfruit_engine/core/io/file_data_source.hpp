@@ -14,7 +14,7 @@ class FileDataSource : public DataSource {
     void Seek(size_t position) override;
     size_t Tell() override;
     size_t Size() override;
-    bool EndOfFile();
+    bool EndOfFile() override;
 
    private:
     std::ifstream m_file;

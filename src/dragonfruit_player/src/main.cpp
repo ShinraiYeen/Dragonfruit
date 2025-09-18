@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#include <dragonfruit_engine/core/decoders/wav_decoder.hpp>
+#include <dragonfruit_engine/core/parsers/wav_parser.hpp>
+
 #include "frontends/default_frontend.hpp"
 #include "player.hpp"
 #include "version.hpp"
@@ -40,35 +43,40 @@ void DisplayHelpMessage(char** argv) {
 void DisplayVersion() { printf("Dragonfruit v%s\n", DRAGONFRUIT_VERSION); }
 
 int main(int argc, char** argv) {
-    std::vector<std::filesystem::path> song_paths;
+    dragonfruit::FileDataSource data("sneaky_driver.wav");
+    dragonfruit::WavParser parser(data);
 
-    // Parse command line arguments
-    for (int i = 1; i < argc; i++) {
-        std::string arg(argv[i]);
-        if (arg == "-h" || arg == "--help") {
-            DisplayHelpMessage(argv);
-            return EXIT_SUCCESS;
-        } else if (arg == "-v" || arg == "--version") {
-            DisplayVersion();
-            return EXIT_SUCCESS;
-        } else if (arg.empty() || arg[0] == '-') {
-            fprintf(stderr, "Unknown option: %s\n", arg.c_str());
-            DisplayUsageMessage(argv);
-            return EXIT_FAILURE;
-        } else {
-            CollectFiles(argv[i], song_paths);
-        }
-    }
+    printf("%s\n%s\n%s\n", parser.Name().c_str(), parser.Album().c_str(), parser.Artist().c_str());
 
-    if (song_paths.empty()) {
-        fprintf(stderr, "No valid song files found, quitting.\n");
-        DisplayUsageMessage(argv);
-        return EXIT_FAILURE;
-    }
+    // std::vector<std::filesystem::path> song_paths;
 
-    Player player(song_paths);
-    std::unique_ptr<Frontend> frontend(new DefaultFrontend(player));
-    frontend->Start();
+    // // Parse command line arguments
+    // for (int i = 1; i < argc; i++) {
+    //     std::string arg(argv[i]);
+    //     if (arg == "-h" || arg == "--help") {
+    //         DisplayHelpMessage(argv);
+    //         return EXIT_SUCCESS;
+    //     } else if (arg == "-v" || arg == "--version") {
+    //         DisplayVersion();
+    //         return EXIT_SUCCESS;
+    //     } else if (arg.empty() || arg[0] == '-') {
+    //         fprintf(stderr, "Unknown option: %s\n", arg.c_str());
+    //         DisplayUsageMessage(argv);
+    //         return EXIT_FAILURE;
+    //     } else {
+    //         CollectFiles(argv[i], song_paths);
+    //     }
+    // }
+
+    // if (song_paths.empty()) {
+    //     fprintf(stderr, "No valid song files found, quitting.\n");
+    //     DisplayUsageMessage(argv);
+    //     return EXIT_FAILURE;
+    // }
+
+    // Player player(song_paths);
+    // std::unique_ptr<Frontend> frontend(new DefaultFrontend(player));
+    // frontend->Start();
 
     return 0;
 }

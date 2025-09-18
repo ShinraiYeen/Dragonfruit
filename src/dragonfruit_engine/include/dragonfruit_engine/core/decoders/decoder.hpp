@@ -19,7 +19,7 @@ class Decoder {
     void Stop();
 
    protected:
-    Decoder(Buffer& buffer, DataSource& data_source) : m_buffer(buffer), m_data_source(data_source) {}
+    Decoder(Buffer& buffer, DataSource& data_source) : m_data_source(data_source), m_buffer(buffer) {}
 
     virtual bool DecodeFrame() = 0;
 

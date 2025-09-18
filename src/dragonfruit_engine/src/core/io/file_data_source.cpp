@@ -10,9 +10,9 @@ FileDataSource::FileDataSource(const std::string& filepath) : m_filepath(filepat
     }
 
     // Get file size immediately
-    m_file.seekg(std::ios::end);
+    m_file.seekg(0, std::ios::end);
     m_file_size = m_file.tellg();
-    m_file.seekg(std::ios::beg);
+    m_file.seekg(0, std::ios::beg);
 }
 
 size_t FileDataSource::Read(uint8_t* buffer, size_t max_bytes) {
@@ -26,5 +26,5 @@ size_t FileDataSource::Tell() { return m_file.tellg(); }
 
 size_t FileDataSource::Size() { return m_file_size; }
 
-bool FileDataSource::EndOfFile() { return m_file.eof(); }
+bool FileDataSource::EndOfFile() { return Tell() >= Size(); }
 }  // namespace dragonfruit

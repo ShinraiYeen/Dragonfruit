@@ -46,5 +46,7 @@ class AudioEngine {
 
     // Keeps track of the state of the currently playing song
     EngineState m_engine_state;
+
+    std::unique_ptr<Decoder> m_decoder;
 };
 }  // namespace dragonfruit

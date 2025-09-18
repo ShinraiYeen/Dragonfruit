@@ -8,6 +8,7 @@
 #include <iostream>
 #include <thread>
 
+#include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 #include "dragonfruit_engine/exception.hpp"
 #include "dragonfruit_engine/utils.hpp"
 

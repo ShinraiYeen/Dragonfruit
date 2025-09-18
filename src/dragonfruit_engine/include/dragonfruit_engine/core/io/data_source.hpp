@@ -10,5 +10,6 @@ class DataSource {
     virtual void Seek(size_t position) = 0;
     virtual size_t Tell() = 0;
     virtual size_t Size() = 0;
+    virtual bool EndOfFile() = 0;
 };
 }  // namespace dragonfruit
