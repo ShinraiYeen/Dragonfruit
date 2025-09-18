@@ -5,6 +5,8 @@
 
 #include <memory>
 
+#include "dragonfruit_engine/core/decoders/decoder.hpp"
+#include "dragonfruit_engine/core/io/data_source.hpp"
 #include "dragonfruit_engine/sound.hpp"
 
 namespace dragonfruit {

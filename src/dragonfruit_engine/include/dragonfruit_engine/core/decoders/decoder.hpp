@@ -11,21 +11,21 @@ namespace dragonfruit {
  * @brief Abstract threaded decoder class.
  *
  */
-template <typename T>
 class Decoder {
    public:
-    Decoder(Buffer<T>& buffer, DataSource& data_source);
-    ~Decoder();
+    virtual ~Decoder();
 
     void Start();
     void Stop();
 
    protected:
-    virtual bool DecodeFrame(const std::vector<uint8_t> frame_data) = 0;
+    Decoder(Buffer& buffer, DataSource& data_source) : m_buffer(buffer), m_data_source(data_source) {}
+
+    virtual bool DecodeFrame() = 0;
 
    private:
     std::thread m_decoder_thread;
-    Buffer<T>& m_buffer;
+    Buffer& m_buffer;
     DataSource& m_data_source;
 };
 }  // namespace dragonfruit
