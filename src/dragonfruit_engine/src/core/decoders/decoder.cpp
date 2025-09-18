@@ -9,7 +9,10 @@ void Decoder::Start() {
                         "Cannot start the decoder twice, an internal thread is already running");
     }
 
-    m_decoder_thread = std::thread(&Decoder::DecodeFrame, this);
+    m_decoder_thread = std::thread([&]() {
+        while (DecodeFrame()) {
+        }
+    });
 }
 
 void Decoder::Stop() { m_decoder_thread.join(); }

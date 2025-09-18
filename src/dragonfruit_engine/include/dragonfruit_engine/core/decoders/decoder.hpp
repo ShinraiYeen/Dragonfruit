@@ -23,9 +23,10 @@ class Decoder {
 
     virtual bool DecodeFrame() = 0;
 
+    DataSource& m_data_source;
+    Buffer& m_buffer;
+
    private:
     std::thread m_decoder_thread;
-    Buffer& m_buffer;
-    DataSource& m_data_source;
 };
 }  // namespace dragonfruit
