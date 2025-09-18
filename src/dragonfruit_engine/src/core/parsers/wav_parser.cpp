@@ -70,6 +70,7 @@ void WavParser::HandleFmtChunk(DataSource& file, size_t size) {
 }
 
 void WavParser::HandleDataChunk(DataSource& file, size_t size) {
+    m_sample_data_size = size;
     m_sample_data_offset = file.Tell();
     file.Seek(file.Tell() + size);
 }

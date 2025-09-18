@@ -100,7 +100,9 @@ class WavParser {
 
     inline WavFormatCode Format() const { return m_format; }
 
-    inline size_t SampleDataOffest() const { return m_sample_data_offset; }
+    inline size_t SampleDataOffset() const { return m_sample_data_offset; }
+
+    inline size_t SampleDataSize() const { return m_sample_data_size; }
 
    private:
     struct ChunkHeader {
@@ -147,5 +149,6 @@ class WavParser {
     uint16_t m_bit_depth;
     WavFormatCode m_format;
     size_t m_sample_data_offset;
+    size_t m_sample_data_size;
 };
 }  // namespace dragonfruit

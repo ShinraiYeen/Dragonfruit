@@ -11,5 +11,6 @@ class WavDecoder final : public Decoder {
    private:
     bool DecodeFrame() override;
     WavParser m_parser;
+    size_t m_cur_sample_data_offset;
 };
 }  // namespace dragonfruit
