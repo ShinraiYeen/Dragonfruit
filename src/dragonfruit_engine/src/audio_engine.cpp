@@ -1,19 +1,20 @@
 #include "dragonfruit_engine/audio_engine.hpp"
 
+#include <pulse/def.h>
 #include <pulse/error.h>
+#include <pulse/stream.h>
+#include <pulse/thread-mainloop.h>
 #include <pulse/volume.h>
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
-#include <thread>
 
 #include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 #include "dragonfruit_engine/exception.hpp"
-#include "dragonfruit_engine/utils.hpp"
 
 namespace dragonfruit {
 
+namespace {
 // Callback for context state changes
 void ContextStateCallback(pa_context* context, void* userdata) {
     (void)context;  // Suppress unused warning
@@ -28,17 +29,23 @@ void StreamStateCallback(pa_stream* stream, void* userdata) {
 
 // Stream write callback
 void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
-    EngineState* audio = static_cast<EngineState*>(userData);
-    size_t remaining = audio->sound->SampleDataSize() - audio->offset;
-    size_t bytesToWrite = std::min(length, remaining);
+    (void)length;
+    EngineState* state = static_cast<EngineState*>(userData);
 
-    if (bytesToWrite > 0) {
-        pa_stream_write(stream, audio->sound->SampleData() + audio->offset, bytesToWrite, nullptr, 0, PA_SEEK_RELATIVE);
-        audio->offset += bytesToWrite;
-    } else {
-        audio->is_finished = true;
-        pa_stream_cork(stream, true, nullptr, nullptr);
+    const size_t frame_size = 4;
+    size_t num_frames = std::floor(length / frame_size);
+    std::vector<uint8_t> chunk;
+    chunk.reserve(num_frames);
+
+    for (size_t i = 0; i < num_frames; i++) {
+        std::vector<uint8_t> frame = state->buffer.Pop();
+        chunk.insert(chunk.end(), frame.begin(), frame.end());
     }
+
+    size_t bytes_to_write = num_frames * frame_size;
+
+    pa_stream_write(stream, chunk.data(), bytes_to_write, nullptr, 0, PA_SEEK_RELATIVE);
+    state->offset += bytes_to_write;
 }
 
 // Blocking call to wait for a stream to disconnect since pa_stream_disconnect is an async call.
@@ -59,11 +66,13 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
     }
 }
 
-AudioEngine::AudioEngine() {
+}  // namespace
+
+AudioEngine::AudioEngine() : m_buffer(4096), m_engine_state{0, false, m_buffer} {
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
     if (!m_mainloop) {
-        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to inqitialize pulse main loop");
+        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to initialize pulse main loop");
     }
 
     // Create context for threaded mainloop
@@ -123,7 +132,10 @@ AudioEngine::~AudioEngine() {
     pa_threaded_mainloop_free(m_mainloop);
 }
 
-void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
+void AudioEngine::PlayAsync(std::shared_ptr<DataSource> data_source) {
+    m_decoder.reset(new WavDecoder(m_buffer, data_source));
+    m_decoder->Start();
+
     pa_threaded_mainloop_lock(m_mainloop);
 
     // If there is already a stream setup, we will have to disconnect and create a new one
@@ -132,18 +144,14 @@ void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
     m_stream = nullptr;
 
     // Setup stream
-    m_sample_spec.channels = sound->Channels();
-    m_sample_spec.format = utils::GetPulseFormat(sound->Format(), sound->BitDepth());
-    m_sample_spec.rate = sound->SampleRate();
+    // TODO: Placeholder values for now, change later
+    m_sample_spec.channels = 2;
+    m_sample_spec.format = pa_sample_format::PA_SAMPLE_S16LE;
+    m_sample_spec.rate = 44100;
 
     if (m_sample_spec.format == pa_sample_format::PA_SAMPLE_INVALID) {
         throw Exception(ErrorCode::INVALID_FORMAT, "Invalid WAV format");
     }
-
-    // Setup internal engine state
-    m_engine_state.offset = 0;
-    m_engine_state.is_finished = false;
-    m_engine_state.sound = sound;
 
     // Create a new stream connect to the context and hook the state change and write callbacks for async functionality
     m_stream = pa_stream_new(m_context, "Playback", &m_sample_spec, nullptr);
@@ -185,7 +193,7 @@ void AudioEngine::Pause(bool pause) {
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
-bool AudioEngine::IsFinished() { return m_engine_state.is_finished; }
+bool AudioEngine::IsFinished() { return false; }
 
 double AudioEngine::GetCurrentSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);
@@ -203,7 +211,7 @@ double AudioEngine::GetCurrentSongTime() {
     int64_t played_offset = static_cast<int64_t>(m_engine_state.offset) -
                             static_cast<int64_t>(timing_info->write_index - timing_info->read_index);
 
-    played_offset = std::clamp(played_offset, int64_t(0), static_cast<int64_t>(m_engine_state.sound->SampleDataSize()));
+    played_offset = std::clamp(played_offset, int64_t(0), static_cast<int64_t>(m_decoder->NumFrames() * 4));
 
     pa_threaded_mainloop_unlock(m_mainloop);
 
@@ -212,8 +220,9 @@ double AudioEngine::GetCurrentSongTime() {
 
 double AudioEngine::GetTotalSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);
+    // TODO: Frame size is hard coded right now, must change later
     double total_song_time =
-        static_cast<double>(pa_bytes_to_usec(m_engine_state.sound->SampleDataSize(), &m_sample_spec)) / 1000000.0;
+        static_cast<double>(pa_bytes_to_usec(m_decoder->NumFrames() * 4, &m_sample_spec)) / 1000000.0;
     pa_threaded_mainloop_unlock(m_mainloop);
     return total_song_time;
 }
@@ -223,7 +232,15 @@ void AudioEngine::Seek(double seconds) {
     size_t bytes_per_second = pa_bytes_per_second(&m_sample_spec);
 
     pa_threaded_mainloop_lock(m_mainloop);
+
+    m_decoder->Pause();
+    m_buffer.Clear();
+    m_decoder->Seek(seconds);
+    m_decoder->Resume();
+
     pa_stream_cork(m_stream, true, nullptr, nullptr);
+
+    m_buffer.Clear();
     const pa_timing_info* timing_info = pa_stream_get_timing_info(m_stream);
 
     // We haven't received a timing update from the server yet, therefore we cannot accurately seek. In this case, we
@@ -240,7 +257,7 @@ void AudioEngine::Seek(double seconds) {
     // The new offset should be clamped between 0 (the start of the audio data) and the end of the audio data to ensure
     // we do not accidentally set the offset to unreadable/uninitialized memory regions.
     size_t new_offset = static_cast<size_t>(
-        std::clamp(current_offset + bytes_to_seek, 0.0, static_cast<double>(m_engine_state.sound->SampleDataSize())));
+        std::clamp(current_offset + bytes_to_seek, 0.0, static_cast<double>(m_decoder->NumFrames() * 4)));
 
     // Ensure the new offset is aligned to the frame size
     new_offset = new_offset - (new_offset % pa_frame_size(&m_sample_spec));

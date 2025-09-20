@@ -1,9 +1,5 @@
 #include "dragonfruit_engine/sound.hpp"
 
-#include <fstream>
-#include <iostream>
-#include <optional>
-
 #include "dragonfruit_engine/exception.hpp"
 
 namespace dragonfruit {

@@ -1,7 +1,7 @@
 #include "player.hpp"
 
 #include <algorithm>
-#include <iostream>
+#include <dragonfruit_engine/core/io/file_data_source.hpp>
 #include <random>
 
 Player::Player(const std::vector<std::filesystem::path>& song_files) : m_song_paths(song_files) {}
@@ -15,11 +15,8 @@ void Player::Play(int idx) {
     m_cur_song_idx = clamped_idx;
 
     // Load in the new song
-    std::shared_ptr<dragonfruit::Sound> tmp_song(new dragonfruit::Sound(m_song_paths[m_cur_song_idx]));
-    m_engine.PlayAsync(tmp_song);
-
-    // Once the old sound has finished, we swap it out with the temp one. This ensures proper freeing of the sound.
-    std::swap(tmp_song, m_cur_sound);
+    auto data = std::make_shared<dragonfruit::FileDataSource>(m_song_paths[m_cur_song_idx]);
+    m_engine.PlayAsync(data);
 }
 
 void Player::PlayRelative(int delta) {

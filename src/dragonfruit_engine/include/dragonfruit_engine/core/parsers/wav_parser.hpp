@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -17,7 +18,7 @@ class WavParser {
      *
      * @param[in] filepath Filepath pointing to a valid WAV file.
      */
-    WavParser(DataSource& data_source);
+    WavParser(std::shared_ptr<DataSource> data_source);
     ~WavParser();
 
     /**
@@ -104,6 +105,8 @@ class WavParser {
 
     inline size_t SampleDataSize() const { return m_sample_data_size; }
 
+    inline size_t NumFrames() const { return m_sample_data_size / ((m_bit_depth / 8) * m_channels); }
+
    private:
     struct ChunkHeader {
         char id[4];
@@ -134,12 +137,12 @@ class WavParser {
         char info_id[4];
     };
 
-    bool ReadChunk(DataSource& file);
-    void ParseChunk(ChunkHeader header, DataSource& file);
-    void HandleFmtChunk(DataSource& file, size_t size);
-    void HandleDataChunk(DataSource& file, size_t size);
-    void HandleListChunk(DataSource& file, size_t size);
-    void HandleUnknownChunk(DataSource& file, size_t size);
+    bool ReadChunk(std::shared_ptr<DataSource> file);
+    void ParseChunk(ChunkHeader header, std::shared_ptr<DataSource> file);
+    void HandleFmtChunk(std::shared_ptr<DataSource> file, size_t size);
+    void HandleDataChunk(std::shared_ptr<DataSource> file, size_t size);
+    void HandleListChunk(std::shared_ptr<DataSource> file, size_t size);
+    void HandleUnknownChunk(std::shared_ptr<DataSource> file, size_t size);
 
     std::unordered_map<std::string, std::string> m_info_tags;
 

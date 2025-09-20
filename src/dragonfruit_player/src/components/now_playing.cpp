@@ -12,20 +12,17 @@ std::string FmtCodeToString(dragonfruit::WavFormatCode code) {
 }
 
 Element NowPlayingBase::OnRender() {
-    std::shared_ptr<dragonfruit::Sound> song = m_player.GetCurrentSong();
-
     // If the song doesn't have a name (metadata not found) revert to the file name
-    std::string song_name =
-        song->Name().empty() ? m_player.GetSongQueue()[m_player.GetCurrentSongIdx()].filename().string() : song->Name();
+    std::string song_name = m_player.GetSongQueue()[m_player.GetCurrentSongIdx()].filename().string();
     return vbox({
         filler(),
         paragraph(song_name) | hcenter,
-        paragraph(song->Artist()) | hcenter,
-        paragraph(song->Album()) | hcenter,
+        // paragraph(song->Artist()) | hcenter,
+        // paragraph(song->Album()) | hcenter,
         text(""),
-        paragraph(std::format("WAV | {} {}-bit | {} Hz", FmtCodeToString(song->Format()), song->BitDepth(),
-                              song->SampleRate())) |
-            hcenter,
+        // paragraph(std::format("WAV | {} {}-bit | {} Hz", FmtCodeToString(song->Format()), song->BitDepth(),
+        //                       song->SampleRate())) |
+        // hcenter,
         filler(),
     });
 }

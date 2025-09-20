@@ -20,11 +20,10 @@ Element MiniPlayerBase::OnRender() {
     double song_time = m_player.GetCurrentSongTime();
     double total_song_time = m_player.GetTotalSongTime();
     bool paused = m_player.IsPaused();
-    std::shared_ptr<dragonfruit::Sound> song = m_player.GetCurrentSong();
     size_t total_songs = m_player.GetSongQueue().size();
     size_t song_idx = m_player.GetCurrentSongIdx();
 
-    std::string song_name = song->Name().empty() ? m_player.GetSongQueue()[song_idx].filename().string() : song->Name();
+    std::string song_name = m_player.GetSongQueue()[song_idx].filename().string();
 
     Decorator progress_bar_decorator = color(LinearGradient(Color::CornflowerBlue, Color::BlueViolet));
 

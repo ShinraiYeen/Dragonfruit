@@ -5,16 +5,19 @@
 
 #include <memory>
 
+#include "dragonfruit_engine/core/buffer.hpp"
 #include "dragonfruit_engine/core/decoders/decoder.hpp"
 #include "dragonfruit_engine/core/io/data_source.hpp"
-#include "dragonfruit_engine/sound.hpp"
 
 namespace dragonfruit {
 
+/**
+ * This is something that's important, trust me.
+ */
 struct EngineState {
-    size_t offset = 0;        // Offset in bytes from the sample data to begin writing at
+    size_t offset = 0;        // Local offset of bytes into the sample data
     bool is_finished = true;  // Whether the current stream has been finished or not.
-    std::shared_ptr<Sound> sound;
+    Buffer& buffer;
 };
 
 /**
@@ -26,7 +29,7 @@ class AudioEngine {
     AudioEngine();
     ~AudioEngine();
 
-    void PlayAsync(std::shared_ptr<Sound> sound);
+    void PlayAsync(std::shared_ptr<DataSource> data_source);
     void Pause(bool pause);
     bool IsFinished();
     double GetTotalSongTime();
@@ -44,9 +47,8 @@ class AudioEngine {
     pa_sample_spec m_sample_spec;
     uint32_t m_sink_idx = 0;
 
-    // Keeps track of the state of the currently playing song
+    Buffer m_buffer;
     EngineState m_engine_state;
-
     std::unique_ptr<Decoder> m_decoder;
 };
 }  // namespace dragonfruit

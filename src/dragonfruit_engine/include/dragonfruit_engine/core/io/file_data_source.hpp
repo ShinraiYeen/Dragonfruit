@@ -6,7 +6,7 @@
 #include "dragonfruit_engine/core/io/data_source.hpp"
 
 namespace dragonfruit {
-class FileDataSource : public DataSource {
+class FileDataSource final : public DataSource {
    public:
     FileDataSource(const std::string& filepath);
 

@@ -91,4 +91,6 @@ void DefaultFrontend::Start() {
             m_player.PlayRelative(1);
         }
     }
+
+    printf("Quitting application!\n");
 }
