@@ -67,10 +67,10 @@ void DefaultFrontend::Start() {
             m_player.PlayRelative(-1);
             return true;
         } else if (event == Event::Character(",")) {
-            m_player.Seek(-5.0);
+            m_player.Seek(m_player.GetCurrentSongTime() - 5.0);
             return true;
         } else if (event == Event::Character(".")) {
-            m_player.Seek(5.0);
+            m_player.Seek(m_player.GetCurrentSongTime() + 5.0);
             return true;
         } else if (event == Event::Character("s")) {
             m_player.Shuffle();

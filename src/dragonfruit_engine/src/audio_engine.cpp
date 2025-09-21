@@ -2,6 +2,7 @@
 
 #include <pulse/def.h>
 #include <pulse/error.h>
+#include <pulse/sample.h>
 #include <pulse/stream.h>
 #include <pulse/thread-mainloop.h>
 #include <pulse/volume.h>
@@ -230,38 +231,17 @@ double AudioEngine::GetTotalSongTime() {
 }
 
 void AudioEngine::Seek(double seconds) {
-    // Convert seconds into the amount of bytes to seek back
-    size_t bytes_per_second = pa_bytes_per_second(&m_sample_spec);
-
-    m_decoder->Seek(seconds);
+    const size_t frame_size = pa_frame_size(&m_sample_spec);
+    const double song_time_seconds = GetTotalSongTime();
+    const double seconds_clamped = std::clamp(seconds, 0.0, song_time_seconds);
 
     pa_threaded_mainloop_lock(m_mainloop);
-
     pa_stream_cork(m_stream, true, nullptr, nullptr);
 
-    const pa_timing_info* timing_info = pa_stream_get_timing_info(m_stream);
+    const size_t frame_index = std::floor(seconds_clamped * m_sample_spec.rate);
+    m_engine_state.offset = frame_index * frame_size;
+    m_decoder->Seek(seconds_clamped);
 
-    // We haven't received a timing update from the server yet, therefore we cannot accurately seek. In this case, we
-    // return early. It is most likely this only occurs during edge cases, but we should check just in case.
-    if (!timing_info) {
-        pa_threaded_mainloop_unlock(m_mainloop);
-        return;
-    }
-    int64_t still_in_buffer = timing_info->write_index - timing_info->read_index;
-
-    double bytes_to_seek = seconds * bytes_per_second;
-    double current_offset = m_engine_state.offset - still_in_buffer;
-
-    // The new offset should be clamped between 0 (the start of the audio data) and the end of the audio data to ensure
-    // we do not accidentally set the offset to unreadable/uninitialized memory regions.
-    size_t new_offset = static_cast<size_t>(
-        std::clamp(current_offset + bytes_to_seek, 0.0, static_cast<double>(m_decoder->NumFrames() * 4)));
-
-    // Ensure the new offset is aligned to the frame size
-    new_offset = new_offset - (new_offset % pa_frame_size(&m_sample_spec));
-    m_engine_state.offset = new_offset;
-
-    // Flush the current buffer so that we start at our new offset
     pa_stream_flush(m_stream, nullptr, nullptr);
     pa_stream_cork(m_stream, false, nullptr, nullptr);
     pa_stream_update_timing_info(m_stream, nullptr, nullptr);
