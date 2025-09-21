@@ -38,8 +38,10 @@ void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
     chunk.reserve(num_frames);
 
     for (size_t i = 0; i < num_frames; i++) {
-        std::vector<uint8_t> frame = state->buffer.Pop();
-        chunk.insert(chunk.end(), frame.begin(), frame.end());
+        std::optional<std::vector<uint8_t>> frame = state->buffer.Pop();
+        if (!frame.has_value()) return;
+
+        chunk.insert(chunk.end(), frame.value().begin(), frame.value().end());
     }
 
     size_t bytes_to_write = num_frames * frame_size;
@@ -132,8 +134,8 @@ AudioEngine::~AudioEngine() {
     pa_threaded_mainloop_free(m_mainloop);
 }
 
-void AudioEngine::PlayAsync(std::shared_ptr<DataSource> data_source) {
-    m_decoder.reset(new WavDecoder(m_buffer, data_source));
+void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
+    m_decoder.reset(new WavDecoder(m_buffer, std::move(data_source)));
     m_decoder->Start();
 
     pa_threaded_mainloop_lock(m_mainloop);
@@ -231,16 +233,12 @@ void AudioEngine::Seek(double seconds) {
     // Convert seconds into the amount of bytes to seek back
     size_t bytes_per_second = pa_bytes_per_second(&m_sample_spec);
 
-    pa_threaded_mainloop_lock(m_mainloop);
-
-    m_decoder->Pause();
-    m_buffer.Clear();
     m_decoder->Seek(seconds);
-    m_decoder->Resume();
+
+    pa_threaded_mainloop_lock(m_mainloop);
 
     pa_stream_cork(m_stream, true, nullptr, nullptr);
 
-    m_buffer.Clear();
     const pa_timing_info* timing_info = pa_stream_get_timing_info(m_stream);
 
     // We haven't received a timing update from the server yet, therefore we cannot accurately seek. In this case, we

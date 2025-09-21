@@ -70,12 +70,8 @@ int main(int argc, char** argv) {
     }
 
     Player player(song_paths);
-    // player.Play(0);
-    // while (true) {
-    // }
     DefaultFrontend frontend(player);
     frontend.Start();
-    printf("Exited from the frontend!\n");
 
     return 0;
 }

@@ -18,7 +18,7 @@ class WavParser {
      *
      * @param[in] filepath Filepath pointing to a valid WAV file.
      */
-    WavParser(std::shared_ptr<DataSource> data_source);
+    WavParser(std::unique_ptr<DataSource>& data_source);
     ~WavParser();
 
     /**
@@ -137,12 +137,12 @@ class WavParser {
         char info_id[4];
     };
 
-    bool ReadChunk(std::shared_ptr<DataSource> file);
-    void ParseChunk(ChunkHeader header, std::shared_ptr<DataSource> file);
-    void HandleFmtChunk(std::shared_ptr<DataSource> file, size_t size);
-    void HandleDataChunk(std::shared_ptr<DataSource> file, size_t size);
-    void HandleListChunk(std::shared_ptr<DataSource> file, size_t size);
-    void HandleUnknownChunk(std::shared_ptr<DataSource> file, size_t size);
+    bool ReadChunk(std::unique_ptr<DataSource>& file);
+    void ParseChunk(ChunkHeader header, std::unique_ptr<DataSource>& file);
+    void HandleFmtChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleDataChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleListChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleUnknownChunk(std::unique_ptr<DataSource>& file, size_t size);
 
     std::unordered_map<std::string, std::string> m_info_tags;
 

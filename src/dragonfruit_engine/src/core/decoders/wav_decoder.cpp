@@ -1,10 +1,10 @@
 #include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 
 namespace dragonfruit {
-WavDecoder::WavDecoder(Buffer& buffer, std::shared_ptr<DataSource> data_source)
-    : Decoder(buffer, data_source), m_parser(data_source) {
+WavDecoder::WavDecoder(Buffer& buffer, std::unique_ptr<DataSource> data_source)
+    : Decoder(buffer, std::move(data_source)), m_parser(m_data_source) {
     m_cur_sample_data_offset = m_parser.SampleDataOffset();
-    data_source->Seek(m_cur_sample_data_offset);
+    m_data_source->Seek(m_cur_sample_data_offset);
 }
 
 bool WavDecoder::DecodeFrame() {
@@ -15,7 +15,7 @@ bool WavDecoder::DecodeFrame() {
     return !(m_data_source->Tell() >= m_parser.SampleDataOffset() + m_parser.SampleDataSize());
 }
 
-void WavDecoder::Seek(double seconds) {
+void WavDecoder::SeekImpl(double seconds) {
     const size_t frame_size = (m_parser.BitDepth() / 8) * m_parser.Channels();
     // Calculate frame index based on frame size and the sample rate
     const size_t frame_index = seconds * m_parser.SampleRate();

@@ -29,7 +29,7 @@ class AudioEngine {
     AudioEngine();
     ~AudioEngine();
 
-    void PlayAsync(std::shared_ptr<DataSource> data_source);
+    void PlayAsync(std::unique_ptr<DataSource> data_source);
     void Pause(bool pause);
     bool IsFinished();
     double GetTotalSongTime();

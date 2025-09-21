@@ -3,7 +3,7 @@
 #include "dragonfruit_engine/exception.hpp"
 
 namespace dragonfruit {
-WavParser::WavParser(std::shared_ptr<DataSource> data_source) {
+WavParser::WavParser(std::unique_ptr<DataSource>& data_source) {
     // Load RIFF metadata
     RiffChunk chunk;
     data_source->Read(reinterpret_cast<uint8_t*>(&chunk), sizeof(chunk));
@@ -41,7 +41,7 @@ WavParser::WavFormatCode GetWavFormatCode(uint16_t code) {
 }
 }  // namespace
 
-void WavParser::HandleFmtChunk(std::shared_ptr<DataSource> file, size_t size) {
+void WavParser::HandleFmtChunk(std::unique_ptr<DataSource>& file, size_t size) {
     if (size != 16 && size != 18 && size != 40) {
         throw Exception(ErrorCode::INVALID_FORMAT, "Malformed fmt chunk in WAV file");
     }
@@ -69,13 +69,13 @@ void WavParser::HandleFmtChunk(std::shared_ptr<DataSource> file, size_t size) {
     m_format = GetWavFormatCode(extendedChunk.sub_format[1] << 8 | extendedChunk.sub_format[0]);
 }
 
-void WavParser::HandleDataChunk(std::shared_ptr<DataSource> file, size_t size) {
+void WavParser::HandleDataChunk(std::unique_ptr<DataSource>& file, size_t size) {
     m_sample_data_size = size;
     m_sample_data_offset = file->Tell();
     file->Seek(file->Tell() + size);
 }
 
-void WavParser::HandleListChunk(std::shared_ptr<DataSource> file, size_t size) {
+void WavParser::HandleListChunk(std::unique_ptr<DataSource>& file, size_t size) {
     InfoChunk chunk;
     file->Read(reinterpret_cast<uint8_t*>(&chunk), 4);
     uint32_t bytesRead = 4;
@@ -98,9 +98,9 @@ void WavParser::HandleListChunk(std::shared_ptr<DataSource> file, size_t size) {
     }
 }
 
-void WavParser::HandleUnknownChunk(std::shared_ptr<DataSource> file, size_t size) { file->Seek(file->Tell() + size); }
+void WavParser::HandleUnknownChunk(std::unique_ptr<DataSource>& file, size_t size) { file->Seek(file->Tell() + size); }
 
-void WavParser::ParseChunk(ChunkHeader header, std::shared_ptr<DataSource> file) {
+void WavParser::ParseChunk(ChunkHeader header, std::unique_ptr<DataSource>& file) {
     ChunkCode code = GetChunkCode(std::string(header.id, 4));
     switch (code) {
         case ChunkCode::DATA: {
@@ -130,7 +130,7 @@ void WavParser::ParseChunk(ChunkHeader header, std::shared_ptr<DataSource> file)
     }
 }
 
-bool WavParser::ReadChunk(std::shared_ptr<DataSource> file) {
+bool WavParser::ReadChunk(std::unique_ptr<DataSource>& file) {
     // Immediately return false if we're at the end of the file
     if (file->EndOfFile()) {
         return false;

@@ -15,8 +15,8 @@ void Player::Play(int idx) {
     m_cur_song_idx = clamped_idx;
 
     // Load in the new song
-    auto data = std::make_shared<dragonfruit::FileDataSource>(m_song_paths[m_cur_song_idx]);
-    m_engine.PlayAsync(data);
+    auto data = std::make_unique<dragonfruit::FileDataSource>(m_song_paths[m_cur_song_idx]);
+    m_engine.PlayAsync(std::move(data));
 }
 
 void Player::PlayRelative(int delta) {

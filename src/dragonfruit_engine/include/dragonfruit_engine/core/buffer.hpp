@@ -2,6 +2,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <vector>
 
@@ -11,20 +12,11 @@ class Buffer {
    public:
     Buffer(size_t capacity);
 
-    /**
-     * @brief Pushes a value to the queue.
-     */
     void Push(std::vector<uint8_t> data);
+    std::optional<std::vector<uint8_t>> Pop();
 
-    /**
-     * @brief Pops a value from the front of the queue.
-     */
-    std::vector<uint8_t> Pop();
-
-    /**
-     * @brief Clears all data from the buffer.
-     */
-    void Clear();
+    void Shutdown();
+    void Reset();
 
    private:
     size_t m_capacity;
@@ -32,5 +24,6 @@ class Buffer {
     std::condition_variable m_cond_producer;
     std::condition_variable m_cond_consumer;
     std::queue<std::vector<uint8_t>> m_queue;
+    bool m_stop = false;
 };
 }  // namespace dragonfruit
