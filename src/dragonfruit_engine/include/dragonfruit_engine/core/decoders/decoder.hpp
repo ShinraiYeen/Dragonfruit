@@ -28,11 +28,10 @@ class Decoder {
     Decoder(Buffer& buffer, std::unique_ptr<DataSource> data_source)
         : m_data_source(std::move(data_source)), m_buffer(buffer) {}
 
-    virtual bool DecodeFrame() = 0;
+    virtual std::optional<std::vector<uint8_t>> DecodeFrame() = 0;
     virtual void SeekImpl(double seconds) = 0;
 
     std::unique_ptr<DataSource> m_data_source;  // Data source must be owned by the decoder
-    Buffer& m_buffer;                           // Shared thread-safe blocking producer/consumer buffer
 
    private:
     void Pause(bool pause);
@@ -43,5 +42,7 @@ class Decoder {
 
     std::atomic<bool> m_shutdown = false;
     std::atomic<bool> m_paused = false;
+
+    Buffer& m_buffer;  // Shared thread-safe blocking producer/consumer buffer
 };
 }  // namespace dragonfruit

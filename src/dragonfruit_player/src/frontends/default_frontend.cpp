@@ -39,7 +39,7 @@ void DefaultFrontend::Start() {
         equalizer,
     });
 
-    auto screen = ScreenInteractive::Fullscreen();
+    auto screen = ScreenInteractive::TerminalOutput();
 
     // Define the FTXUI renderer, which is responsible for rendering all of the components and the main interface
     auto component = Renderer(layout, [&] {
@@ -91,6 +91,4 @@ void DefaultFrontend::Start() {
             m_player.PlayRelative(1);
         }
     }
-
-    printf("Quitting application!\n");
 }

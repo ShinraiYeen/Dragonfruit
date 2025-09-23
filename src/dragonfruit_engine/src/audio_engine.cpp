@@ -9,7 +9,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
+#include "dragonfruit_engine/core/buffer.hpp"
 #include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 #include "dragonfruit_engine/exception.hpp"
 
@@ -30,25 +32,33 @@ void StreamStateCallback(pa_stream* stream, void* userdata) {
 
 // Stream write callback
 void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
-    (void)length;
     EngineState* state = static_cast<EngineState*>(userData);
 
-    const size_t frame_size = 4;
-    size_t num_frames = std::floor(length / frame_size);
+    const size_t frame_size = pa_frame_size(&state->spec);
+    const size_t num_frames = std::floor(length / frame_size);
     std::vector<uint8_t> chunk;
-    chunk.reserve(num_frames);
+    chunk.reserve(length);
 
     for (size_t i = 0; i < num_frames; i++) {
-        std::optional<std::vector<uint8_t>> frame = state->buffer.Pop();
-        if (!frame.has_value()) return;
+        std::optional<BufferItem> item = state->buffer.Pop();
+        if (!item.has_value()) {
+            chunk.insert(chunk.end(), frame_size, 0);
+            continue;
+        }
 
-        chunk.insert(chunk.end(), frame.value().begin(), frame.value().end());
+        switch (item.value().item_type) {
+            case ItemType::DecodedFrame:
+                chunk.insert(chunk.end(), item.value().data.begin(), item.value().data.end());
+                state->offset += item.value().data.size();
+                break;
+            case ItemType::DecodeFinished:
+                chunk.insert(chunk.end(), frame_size, 0);
+                state->is_finished = true;
+                break;
+        }
     }
 
-    size_t bytes_to_write = num_frames * frame_size;
-
-    pa_stream_write(stream, chunk.data(), bytes_to_write, nullptr, 0, PA_SEEK_RELATIVE);
-    state->offset += bytes_to_write;
+    pa_stream_write(stream, chunk.data(), chunk.size(), nullptr, 0, PA_SEEK_RELATIVE);
 }
 
 // Blocking call to wait for a stream to disconnect since pa_stream_disconnect is an async call.
@@ -71,7 +81,7 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 
 }  // namespace
 
-AudioEngine::AudioEngine() : m_buffer(4096), m_engine_state{0, false, m_buffer} {
+AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_engine_state(m_buffer, m_sample_spec) {
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
     if (!m_mainloop) {
@@ -116,38 +126,8 @@ AudioEngine::AudioEngine() : m_buffer(4096), m_engine_state{0, false, m_buffer} 
         pa_threaded_mainloop_wait(m_mainloop);
     }
 
-    pa_threaded_mainloop_unlock(m_mainloop);
-}
+    // Create the main audio stream and hook the appropriate callbacks
 
-AudioEngine::~AudioEngine() {
-    pa_threaded_mainloop_lock(m_mainloop);
-
-    // Destroy stream
-    AwaitStreamDisconnect(m_mainloop, m_stream);
-
-    // Destroy the context (this is a blocking call, no awaiting required)
-    pa_context_disconnect(m_context);
-    pa_context_unref(m_context);
-    pa_threaded_mainloop_unlock(m_mainloop);
-
-    // Destroy the threaded mainloop
-    pa_threaded_mainloop_stop(m_mainloop);
-    pa_threaded_mainloop_free(m_mainloop);
-}
-
-void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
-    m_decoder.reset(new WavDecoder(m_buffer, std::move(data_source)));
-    m_decoder->Start();
-
-    pa_threaded_mainloop_lock(m_mainloop);
-
-    // If there is already a stream setup, we will have to disconnect and create a new one
-
-    AwaitStreamDisconnect(m_mainloop, m_stream);
-    m_stream = nullptr;
-
-    // Setup stream
-    // TODO: Placeholder values for now, change later
     m_sample_spec.channels = 2;
     m_sample_spec.format = pa_sample_format::PA_SAMPLE_S16LE;
     m_sample_spec.rate = 44100;
@@ -165,7 +145,7 @@ void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
     if (pa_stream_connect_playback(
             m_stream, nullptr, nullptr,
             static_cast<pa_stream_flags_t>(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
-                                           PA_STREAM_ADJUST_LATENCY),
+                                           PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_CORKED),
             nullptr, nullptr) < 0) {
         throw Exception(ErrorCode::INTERNAL_ERROR, "Unable to connect pulse stream");
     }
@@ -190,13 +170,50 @@ void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
+AudioEngine::~AudioEngine() {
+    pa_threaded_mainloop_lock(m_mainloop);
+
+    // Destroy stream
+    AwaitStreamDisconnect(m_mainloop, m_stream);
+
+    // Destroy the context (this is a blocking call, no awaiting required)
+    pa_context_disconnect(m_context);
+    pa_context_unref(m_context);
+    pa_threaded_mainloop_unlock(m_mainloop);
+
+    // Destroy the threaded mainloop
+    pa_threaded_mainloop_stop(m_mainloop);
+    pa_threaded_mainloop_free(m_mainloop);
+}
+
+void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
+    pa_threaded_mainloop_lock(m_mainloop);
+
+    if (m_decoder) {
+        m_decoder->Stop();
+    }
+
+    m_decoder.reset(new WavDecoder(m_buffer, std::move(data_source)));
+    m_decoder->Start();
+    m_engine_state.Reset();
+
+    pa_stream_cork(m_stream, 0, nullptr, nullptr);
+
+    pa_threaded_mainloop_unlock(m_mainloop);
+}
+
 void AudioEngine::Pause(bool pause) {
     pa_threaded_mainloop_lock(m_mainloop);
     pa_stream_cork(m_stream, pause, nullptr, nullptr);
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
-bool AudioEngine::IsFinished() { return false; }
+bool AudioEngine::IsFinished() {
+    pa_threaded_mainloop_lock(m_mainloop);
+    bool finished = m_engine_state.is_finished;
+    pa_threaded_mainloop_unlock(m_mainloop);
+    return finished;
+}
 
 double AudioEngine::GetCurrentSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);

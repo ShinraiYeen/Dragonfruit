@@ -6,52 +6,47 @@
 namespace dragonfruit {
 Buffer::Buffer(size_t capacity) : m_capacity(capacity) {}
 
-void Buffer::Push(std::vector<uint8_t> data) {
+void Buffer::Push(BufferItem item) {
     std::unique_lock<std::mutex> lock(m_mutex);
     m_cond_producer.wait(lock, [&] { return m_queue.size() < m_capacity || m_stop; });
 
     if (m_stop) return;
 
-    m_queue.push(std::move(data));
-    lock.unlock();
-    m_cond_consumer.notify_one();
+    m_queue.push(item);
 }
 
-std::optional<std::vector<uint8_t>> Buffer::Pop() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond_consumer.wait(lock, [&] { return !m_queue.empty() || m_stop; });
+std::optional<BufferItem> Buffer::Pop() {
+    std::scoped_lock<std::mutex> lock(m_mutex);
 
-    if (m_stop) return std::nullopt;
+    // Immediately return an empty object if there is nothing to read from the internal queue.
+    if (m_queue.empty()) {
+        m_cond_producer.notify_one();
+        return std::nullopt;
+    }
 
-    std::vector<uint8_t> data = std::move(m_queue.front());
+    BufferItem item = std::move(m_queue.front());
     m_queue.pop();
-    lock.unlock();
+
+    // Notify any producers that there is now space in the queue to push more data
     m_cond_producer.notify_one();
 
-    return data;
+    return item;
 }
 
-void Buffer::Reset() {
-    {
-        std::scoped_lock<std::mutex> lock(m_mutex);
-        m_stop = true;
+void Buffer::Clear() {
+    std::scoped_lock<std::mutex> lock(m_mutex);
+    while (!m_queue.empty()) {
+        m_queue.pop();
     }
 
-    m_cond_producer.notify_all();
-    m_cond_consumer.notify_all();
-
-    {
-        std::scoped_lock<std::mutex> lock(m_mutex);
-        m_stop = false;
-    }
+    m_cond_producer.notify_one();
 }
 
-void Buffer::Shutdown() {
+void Buffer::SignalShutdown(bool shutdown) {
     {
         std::scoped_lock<std::mutex> lock(m_mutex);
-        m_stop = true;
+        m_stop = shutdown;
     }
-    m_cond_consumer.notify_all();
     m_cond_producer.notify_all();
 }
 

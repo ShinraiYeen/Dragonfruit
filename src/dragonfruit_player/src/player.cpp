@@ -4,7 +4,7 @@
 #include <dragonfruit_engine/core/io/file_data_source.hpp>
 #include <random>
 
-Player::Player(const std::vector<std::filesystem::path>& song_files) : m_song_paths(song_files) {}
+Player::Player(const std::vector<std::filesystem::path>& song_files) : m_engine(100000), m_song_paths(song_files) {}
 
 Player::~Player() {}
 

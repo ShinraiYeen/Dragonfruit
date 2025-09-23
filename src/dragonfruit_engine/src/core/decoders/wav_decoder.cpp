@@ -1,5 +1,7 @@
 #include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 
+#include "dragonfruit_engine/core/buffer.hpp"
+
 namespace dragonfruit {
 WavDecoder::WavDecoder(Buffer& buffer, std::unique_ptr<DataSource> data_source)
     : Decoder(buffer, std::move(data_source)), m_parser(m_data_source) {
@@ -7,12 +9,16 @@ WavDecoder::WavDecoder(Buffer& buffer, std::unique_ptr<DataSource> data_source)
     m_data_source->Seek(m_cur_sample_data_offset);
 }
 
-bool WavDecoder::DecodeFrame() {
-    size_t frame_size = (m_parser.BitDepth() / 8) * m_parser.Channels();
+std::optional<std::vector<uint8_t>> WavDecoder::DecodeFrame() {
+    if (m_data_source->Tell() >= m_parser.SampleDataOffset() + m_parser.SampleDataSize()) {
+        return std::nullopt;
+    }
+
+    const size_t frame_size = (m_parser.BitDepth() / 8) * m_parser.Channels();
     std::vector<uint8_t> frame(frame_size);
     m_data_source->Read(frame.data(), frame_size);
-    m_buffer.Push(frame);
-    return !(m_data_source->Tell() >= m_parser.SampleDataOffset() + m_parser.SampleDataSize());
+
+    return frame;
 }
 
 void WavDecoder::SeekImpl(double seconds) {
