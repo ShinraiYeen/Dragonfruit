@@ -59,6 +59,8 @@ void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
     }
 
     pa_stream_write(stream, chunk.data(), chunk.size(), nullptr, 0, PA_SEEK_RELATIVE);
+
+    if (state->is_finished) pa_stream_cork(stream, 1, nullptr, nullptr);
 }
 
 // Blocking call to wait for a stream to disconnect since pa_stream_disconnect is an async call.
@@ -188,10 +190,6 @@ AudioEngine::~AudioEngine() {
 
 void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
     pa_threaded_mainloop_lock(m_mainloop);
-
-    if (m_decoder) {
-        m_decoder->Stop();
-    }
 
     m_decoder.reset(new WavDecoder(m_buffer, std::move(data_source)));
     m_decoder->Start();

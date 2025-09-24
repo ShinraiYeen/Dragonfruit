@@ -30,4 +30,6 @@ void WavDecoder::SeekImpl(double seconds) {
 }
 
 size_t WavDecoder::NumFrames() { return m_parser.NumFrames(); }
+
+WavDecoder::~WavDecoder() { Stop(); }
 }  // namespace dragonfruit

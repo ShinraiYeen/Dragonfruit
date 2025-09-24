@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <vector>
 
+#include "dragonfruit_engine/core/parsers/wav_parser.hpp"
+
 /**
  * @brief Defines the main interface for interacting with the underlying dragonfruit audio engine. Frontends should use
  * this to play music and keep track of its current state.
@@ -116,10 +118,13 @@ class Player {
      */
     inline double GetVolume() { return m_cur_volume; }
 
+    inline std::shared_ptr<dragonfruit::WavParser> GetParser() { return m_parser; }
+
    private:
     dragonfruit::AudioEngine m_engine;
     std::vector<std::filesystem::path> m_song_paths;
     int m_cur_song_idx = 0;
+    std::shared_ptr<dragonfruit::WavParser> m_parser;
 
     double m_cur_volume = 1.0;
 };

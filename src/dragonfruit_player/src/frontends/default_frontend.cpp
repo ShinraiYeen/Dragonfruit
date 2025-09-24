@@ -39,7 +39,7 @@ void DefaultFrontend::Start() {
         equalizer,
     });
 
-    auto screen = ScreenInteractive::TerminalOutput();
+    auto screen = ScreenInteractive::Fullscreen();
 
     // Define the FTXUI renderer, which is responsible for rendering all of the components and the main interface
     auto component = Renderer(layout, [&] {

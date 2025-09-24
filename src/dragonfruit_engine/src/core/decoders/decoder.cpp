@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <optional>
+#include <thread>
 
 #include "dragonfruit_engine/core/buffer.hpp"
 #include "dragonfruit_engine/exception.hpp"
@@ -18,16 +19,16 @@ void Decoder::Start() {
     m_buffer.SignalShutdown(false);
     m_buffer.Clear();
 
-    m_decoder_thread = std::thread([&] {
+    m_decoder_thread = std::thread([this] {
         pthread_setname_np(pthread_self(), "df-decoder");
         while (true) {
             std::unique_lock<std::mutex> lock(m_mutex);
-            m_thread_cond.wait(lock, [&] { return !m_paused || m_shutdown; });
+            m_thread_cond.wait(lock, [this] { return !m_paused || m_shutdown; });
 
             if (m_shutdown) break;
+            lock.unlock();
 
             std::optional<std::vector<uint8_t>> frame = DecodeFrame();
-            lock.unlock();
 
             if (!frame.has_value()) {
                 m_buffer.Push(BufferItem(ItemType::DecodeFinished));
@@ -59,7 +60,9 @@ void Decoder::Stop() {
     {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_shutdown = true;
+        m_paused = false;
     }
+
     m_thread_cond.notify_one();
 
     if (m_decoder_thread.joinable()) {
@@ -67,5 +70,5 @@ void Decoder::Stop() {
     }
 }
 
-Decoder::~Decoder() { Stop(); }
+Decoder::~Decoder() {}
 }  // namespace dragonfruit

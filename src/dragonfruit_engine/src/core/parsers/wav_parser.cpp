@@ -12,6 +12,8 @@ WavParser::WavParser(std::unique_ptr<DataSource>& data_source) {
     }
 
     while (ReadChunk(data_source));
+
+    data_source->Seek(0);
 }
 
 WavParser::~WavParser() {}

@@ -19,8 +19,8 @@ class Decoder {
     virtual ~Decoder();
 
     void Start();
-    void Stop();
     void Seek(double seconds);
+    void Stop();
 
     virtual size_t NumFrames() = 0;
 
