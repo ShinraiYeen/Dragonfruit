@@ -32,7 +32,10 @@ void Decoder::Start() {
 
             if (!frame.has_value()) {
                 m_buffer.Push(BufferItem(ItemType::DecodeFinished));
-                break;
+                lock.lock();
+                m_paused = true;
+                lock.unlock();
+                continue;
             }
 
             m_buffer.Push(BufferItem(ItemType::DecodedFrame, frame.value()));

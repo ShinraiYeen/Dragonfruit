@@ -14,6 +14,7 @@
 #include "dragonfruit_engine/core/buffer.hpp"
 #include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 #include "dragonfruit_engine/exception.hpp"
+#include "dragonfruit_engine/logging/logger.hpp"
 
 namespace dragonfruit {
 
@@ -84,6 +85,9 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 }  // namespace
 
 AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_engine_state(m_buffer, m_sample_spec) {
+    Logger::Get()->info("Initializing dragonfruit::AudioEngine");
+    Logger::Get()->debug("This is a debug level message.");
+
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
     if (!m_mainloop) {
