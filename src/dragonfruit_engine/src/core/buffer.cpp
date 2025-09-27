@@ -2,15 +2,20 @@
 
 #include <mutex>
 #include <optional>
+#include <utility>
+
+#include "dragonfruit_engine/logging/logger.hpp"
 
 namespace dragonfruit {
-Buffer::Buffer(size_t capacity) : m_capacity(capacity) {}
+Buffer::Buffer(size_t capacity) : m_capacity(capacity) {
+    Logger::Get()->debug("Initialized buffer with capacity {}", capacity);
+}
 
 void Buffer::Push(BufferItem item) {
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_cond_producer.wait(lock, [&] { return m_queue.size() < m_capacity || m_stop; });
+    m_cond_producer.wait(lock, [&] { return m_queue.size() < m_capacity || m_abort; });
 
-    if (m_stop) return;
+    if (m_abort) return;
 
     m_queue.push(item);
 }
@@ -35,17 +40,16 @@ std::optional<BufferItem> Buffer::Pop() {
 
 void Buffer::Clear() {
     std::scoped_lock<std::mutex> lock(m_mutex);
-    while (!m_queue.empty()) {
-        m_queue.pop();
-    }
+    std::queue<BufferItem> empty;
+    std::swap(m_queue, empty);
 
-    m_cond_producer.notify_one();
+    m_cond_producer.notify_all();
 }
 
-void Buffer::SignalShutdown(bool shutdown) {
+void Buffer::Abort(bool abort) {
     {
         std::scoped_lock<std::mutex> lock(m_mutex);
-        m_stop = shutdown;
+        m_abort = abort;
     }
     m_cond_producer.notify_all();
 }

@@ -7,15 +7,18 @@
 
 #include "spdlog/common.h"
 #include "spdlog/logger.h"
-#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
+
+namespace dragonfruit {
 
 #ifdef ENABLE_DEBUG_LOGGING
 constexpr auto LOG_LEVEL = spdlog::level::debug;
 #else
 constexpr auto LOG_LEVEL = spdlog::level::info;
 #endif
+constexpr size_t DRAGONFRUIT_MAX_LOG_SIZE = 1024 * 1024 * 5;
+constexpr size_t DRAGONFRUIT_MAX_LOG_FILES = 10;
 
-namespace dragonfruit {
 class Logger {
    public:
     static std::shared_ptr<spdlog::logger> Get() {
@@ -32,19 +35,13 @@ class Logger {
 
         fs::create_directories(log_dir);
 
-        auto t = std::time(nullptr);
-        std::tm tm{};
-        localtime_r(&t, &tm);
+        fs::path log_file = log_dir / "dragonfruit.log";
 
-        std::ostringstream oss;
-        oss << std::put_time(&tm, "%Y-%m-%d_%H-%M-%S");
-        std::string filename = "dragonfruit_" + oss.str() + ".log";
-
-        fs::path log_file = log_dir / filename;
-
-        auto logger = spdlog::basic_logger_mt("file_logger", log_file.string(), true);
+        auto logger =
+            spdlog::rotating_logger_mt("file-logger", log_file, DRAGONFRUIT_MAX_LOG_SIZE, DRAGONFRUIT_MAX_LOG_FILES);
         logger->set_pattern("[%Y-%m-%d %H:%M:%S] [%^%l%$] %v");
         logger->set_level(LOG_LEVEL);
+        logger->flush_on(LOG_LEVEL);
 
         return logger;
     }

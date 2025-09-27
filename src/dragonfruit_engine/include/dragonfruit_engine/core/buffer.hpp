@@ -47,13 +47,16 @@ class Buffer {
      */
     void Clear();
 
-    void SignalShutdown(bool shutdown);
+    /**
+     * @brief Signals all producers/consumers to stop blocking and return without having done any work.
+     */
+    void Abort(bool abort);
 
    private:
     size_t m_capacity;
     std::mutex m_mutex;
     std::condition_variable m_cond_producer;
     std::queue<BufferItem> m_queue;
-    bool m_stop = false;
+    bool m_abort = false;
 };
 }  // namespace dragonfruit

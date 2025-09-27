@@ -85,8 +85,7 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 }  // namespace
 
 AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_engine_state(m_buffer, m_sample_spec) {
-    Logger::Get()->info("Initializing dragonfruit::AudioEngine");
-    Logger::Get()->debug("This is a debug level message.");
+    Logger::Get()->info("Initializing audio engine");
 
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
@@ -174,9 +173,12 @@ AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_en
     m_sink_idx = pa_stream_get_index(m_stream);
 
     pa_threaded_mainloop_unlock(m_mainloop);
+
+    Logger::Get()->info("Finished initializing audio engine");
 }
 
 AudioEngine::~AudioEngine() {
+    Logger::Get()->info("Quitting audio engine");
     pa_threaded_mainloop_lock(m_mainloop);
 
     // Destroy stream
