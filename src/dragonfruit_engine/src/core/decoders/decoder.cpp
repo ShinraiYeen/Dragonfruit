@@ -33,13 +33,18 @@ void Decoder::Start() {
 
             std::optional<std::vector<uint8_t>> frame = DecodeFrame();
 
+            // We should not hold onto the lock while we're attempting to push frames into the shared buffer. That is
+            // just asking for a deadlock.
             lock.unlock();
+
             if (!frame.has_value()) {
                 Logger::Get()->debug("[Decoder] Finished decoding");
                 m_buffer.Push(BufferItem(ItemType::DecodeFinished));
+
                 lock.lock();
+                // Critical section as we are modifying a shared variable. Pause the decoder state once we've finished
+                // decoding the given file.
                 m_paused = true;
-                lock.unlock();
                 continue;
             }
 
@@ -76,12 +81,13 @@ void Decoder::Seek(double seconds) {
 }
 
 void Decoder::Stop() {
-    m_buffer.Abort(true);
     {
         std::scoped_lock<std::mutex> lock(m_mutex);
         m_shutdown = true;
         m_paused = false;
     }
+
+    m_buffer.Abort(true);
 
     m_thread_cond.notify_one();
 

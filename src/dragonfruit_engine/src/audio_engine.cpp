@@ -55,6 +55,7 @@ void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
             case ItemType::DecodeFinished:
                 chunk.insert(chunk.end(), frame_size, 0);
                 state->is_finished = true;
+                Logger::Get()->info("[Engine] Reached song end");
                 break;
         }
     }
@@ -85,7 +86,7 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 }  // namespace
 
 AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_engine_state(m_buffer, m_sample_spec) {
-    Logger::Get()->info("Initializing audio engine");
+    Logger::Get()->info("[Engine] Initializing");
 
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
@@ -173,12 +174,10 @@ AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_en
     m_sink_idx = pa_stream_get_index(m_stream);
 
     pa_threaded_mainloop_unlock(m_mainloop);
-
-    Logger::Get()->info("Finished initializing audio engine");
 }
 
 AudioEngine::~AudioEngine() {
-    Logger::Get()->info("Quitting audio engine");
+    Logger::Get()->info("[Engine] Quitting");
     pa_threaded_mainloop_lock(m_mainloop);
 
     // Destroy stream
@@ -207,6 +206,7 @@ void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
 }
 
 void AudioEngine::Pause(bool pause) {
+    Logger::Get()->info("[Engine] Paused: {}", pause);
     pa_threaded_mainloop_lock(m_mainloop);
     pa_stream_cork(m_stream, pause, nullptr, nullptr);
     pa_threaded_mainloop_unlock(m_mainloop);
@@ -271,6 +271,7 @@ void AudioEngine::Seek(double seconds) {
 
 void AudioEngine::SetVolume(double volume) {
     double volume_clamped = std::clamp(volume, 0.0, 1.0);
+    Logger::Get()->debug("[Engine] Setting volume to {}", volume_clamped);
 
     pa_volume_t pa_volume = PA_VOLUME_NORM * volume_clamped;
     pa_cvolume cvol;
