@@ -8,19 +8,6 @@
 
 namespace dragonfruit {
 
-enum class ItemType {
-    DecodedFrame,
-    DecodeFinished,
-};
-
-struct BufferItem {
-    BufferItem(ItemType item_type) : item_type(item_type) {}
-    BufferItem(ItemType item_type, std::vector<uint8_t> data) : item_type(item_type), data(std::move(data)) {}
-
-    ItemType item_type;
-    std::vector<uint8_t> data;
-};
-
 /**
  * @brief A thread-safe, producer blocking, consumer non-blocking queue.
  */
@@ -34,13 +21,13 @@ class Buffer {
      *
      * @param item The buffer item containing data to push to the queue.
      */
-    void Push(BufferItem item);
+    void Push(std::vector<uint8_t> data);
 
     /**
      * @brief This call is non-blocking. Pops the next value from the front of the queue. If there are no items in the
      * queue, std::nullopt will be returned. This must be handled appropriately.
      */
-    std::optional<BufferItem> Pop();
+    std::optional<std::vector<uint8_t>> Pop();
 
     /**
      * @brief Clears the buffer entirely, removing all data from the internal queue.
@@ -56,7 +43,7 @@ class Buffer {
     size_t m_capacity;
     std::mutex m_mutex;
     std::condition_variable m_cond_producer;
-    std::queue<BufferItem> m_queue;
+    std::queue<std::vector<uint8_t>> m_queue;
     bool m_abort = false;
 };
 }  // namespace dragonfruit

@@ -3,12 +3,13 @@
 #include <optional>
 
 #include "dragonfruit_engine/core/decoders/decoder.hpp"
+#include "dragonfruit_engine/core/engine_state.hpp"
 #include "dragonfruit_engine/core/parsers/wav_parser.hpp"
 
 namespace dragonfruit {
 class WavDecoder final : public Decoder {
    public:
-    WavDecoder(Buffer& buffer, std::unique_ptr<DataSource> data_source);
+    WavDecoder(EngineState& state, std::unique_ptr<DataSource> data_source);
     ~WavDecoder();
     size_t NumFrames() override;
     void SeekImpl(double seconds) override;

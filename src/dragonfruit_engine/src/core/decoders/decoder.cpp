@@ -19,9 +19,11 @@ void Decoder::Start() {
                         "Cannot start the decoder twice, an internal thread is already running");
     }
 
+    m_state.decoder_finished.store(false);
+
     // Make sure the buffer is fresh before we start pushing decoded frames into it
-    m_buffer.Abort(false);
-    m_buffer.Clear();
+    m_state.buffer.Abort(false);
+    m_state.buffer.Clear();
 
     m_decoder_thread = std::thread([this] {
         pthread_setname_np(pthread_self(), "df-decoder");
@@ -39,7 +41,7 @@ void Decoder::Start() {
 
             if (!frame.has_value()) {
                 Logger::Get()->debug("[Decoder] Finished decoding");
-                m_buffer.Push(BufferItem(ItemType::DecodeFinished));
+                m_state.decoder_finished.store(true);
 
                 lock.lock();
                 // Critical section as we are modifying a shared variable. Pause the decoder state once we've finished
@@ -48,13 +50,14 @@ void Decoder::Start() {
                 continue;
             }
 
-            m_buffer.Push(BufferItem(ItemType::DecodedFrame, frame.value()));
+            m_state.buffer.Push(frame.value());
         }
     });
 }
 
 void Decoder::Seek(double seconds) {
     Logger::Get()->debug("[Decoder] Seek to {}", seconds);
+    m_state.decoder_finished.store(false);
 
     // Ensure the decoder is paused during the seek
     {
@@ -64,9 +67,9 @@ void Decoder::Seek(double seconds) {
 
     // Buffer must be aborted (to signal to any blocked producers to continue) and then cleared. At this point, the
     // decoder thread should be waiting on its signal.
-    m_buffer.Abort(true);
-    m_buffer.Clear();
-    m_buffer.Abort(false);
+    m_state.buffer.Abort(true);
+    m_state.buffer.Clear();
+    m_state.buffer.Abort(false);
 
     // Acquire a lock to ensure the decoder thread isn't doing anything, then run seek implementation.
     {
@@ -87,16 +90,18 @@ void Decoder::Stop() {
         m_paused = false;
     }
 
-    m_buffer.Abort(true);
+    m_state.buffer.Abort(true);
 
     m_thread_cond.notify_one();
+
+    m_state.decoder_finished.store(true);
 
     if (m_decoder_thread.joinable()) {
         m_decoder_thread.join();
     }
 
     // We should set the buffer back to its normal state. Just some nice housekeeping!
-    m_buffer.Abort(false);
+    m_state.buffer.Abort(false);
 }
 
 Decoder::~Decoder() { Logger::Get()->debug("[Decoder] Stopped"); }

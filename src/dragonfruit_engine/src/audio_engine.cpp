@@ -35,34 +35,31 @@ void StreamStateCallback(pa_stream* stream, void* userdata) {
 void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
     EngineState* state = static_cast<EngineState*>(userData);
 
-    const size_t frame_size = pa_frame_size(&state->spec);
-    const size_t num_frames = std::floor(length / frame_size);
     std::vector<uint8_t> chunk;
     chunk.reserve(length);
 
-    for (size_t i = 0; i < num_frames; i++) {
-        std::optional<BufferItem> item = state->buffer.Pop();
-        if (!item.has_value()) {
-            chunk.insert(chunk.end(), frame_size, 0);
-            continue;
+    while (chunk.size() < length) {
+        std::optional<std::vector<uint8_t>> data = state->buffer.Pop();
+        if (!data.has_value()) {
+            if (state->decoder_finished.load()) {
+                // Decoder is finished
+                state->playing_finished.store(true);
+                chunk.insert(chunk.end(), length - chunk.size(), 0);
+                break;
+            } else {
+                // Underflow
+                chunk.insert(chunk.end(), length - chunk.size(), 0);
+                break;
+            }
         }
 
-        switch (item.value().item_type) {
-            case ItemType::DecodedFrame:
-                chunk.insert(chunk.end(), item.value().data.begin(), item.value().data.end());
-                state->offset += item.value().data.size();
-                break;
-            case ItemType::DecodeFinished:
-                chunk.insert(chunk.end(), frame_size, 0);
-                state->is_finished = true;
-                Logger::Get()->info("[Engine] Reached song end");
-                break;
-        }
+        chunk.insert(chunk.end(), data.value().begin(), data.value().end());
+        state->read_offset += data.value().size();
     }
 
     pa_stream_write(stream, chunk.data(), chunk.size(), nullptr, 0, PA_SEEK_RELATIVE);
 
-    if (state->is_finished) pa_stream_cork(stream, 1, nullptr, nullptr);
+    if (state->playing_finished.load()) pa_stream_cork(stream, 1, nullptr, nullptr);
 }
 
 // Blocking call to wait for a stream to disconnect since pa_stream_disconnect is an async call.
@@ -85,7 +82,7 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
 
 }  // namespace
 
-AudioEngine::AudioEngine(const size_t buffer_size) : m_buffer(buffer_size), m_engine_state(m_buffer, m_sample_spec) {
+AudioEngine::AudioEngine(const size_t buffer_size) : m_engine_state(buffer_size, m_sample_spec) {
     Logger::Get()->info("[Engine] Initializing");
 
     // Initialize threaded mainloop
@@ -196,9 +193,10 @@ AudioEngine::~AudioEngine() {
 void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
     pa_threaded_mainloop_lock(m_mainloop);
 
-    m_decoder.reset(new WavDecoder(m_buffer, std::move(data_source)));
+    m_decoder.reset(new WavDecoder(m_engine_state, std::move(data_source)));
     m_decoder->Start();
-    m_engine_state.Reset();
+    m_engine_state.read_offset = 0;
+    m_engine_state.playing_finished.store(false);
 
     pa_stream_cork(m_stream, 0, nullptr, nullptr);
 
@@ -212,12 +210,7 @@ void AudioEngine::Pause(bool pause) {
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
-bool AudioEngine::IsFinished() {
-    pa_threaded_mainloop_lock(m_mainloop);
-    bool finished = m_engine_state.is_finished;
-    pa_threaded_mainloop_unlock(m_mainloop);
-    return finished;
-}
+bool AudioEngine::IsFinished() { return m_engine_state.playing_finished.load(); }
 
 double AudioEngine::GetCurrentSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);
@@ -232,7 +225,7 @@ double AudioEngine::GetCurrentSongTime() {
         return 0.0;
     }
 
-    int64_t played_offset = static_cast<int64_t>(m_engine_state.offset) -
+    int64_t played_offset = static_cast<int64_t>(m_engine_state.read_offset) -
                             static_cast<int64_t>(timing_info->write_index - timing_info->read_index);
 
     played_offset = std::clamp(played_offset, int64_t(0), static_cast<int64_t>(m_decoder->NumFrames() * 4));
@@ -260,7 +253,7 @@ void AudioEngine::Seek(double seconds) {
     pa_stream_cork(m_stream, true, nullptr, nullptr);
 
     const size_t frame_index = std::floor(seconds_clamped * m_sample_spec.rate);
-    m_engine_state.offset = frame_index * frame_size;
+    m_engine_state.read_offset = frame_index * frame_size;
     m_decoder->Seek(seconds_clamped);
 
     pa_stream_flush(m_stream, nullptr, nullptr);
