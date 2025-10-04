@@ -1,15 +1,19 @@
 #include "frontends/default_frontend.hpp"
 
+#include <chrono>
 #include <ftxui/component/component.hpp>
 #include <ftxui/component/loop.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
 #include <ftxui/screen/screen.hpp>
+#include <thread>
 
 #include "components/equalizer.hpp"
 #include "components/mini_player.hpp"
 #include "components/now_playing.hpp"
 #include "components/song_queue.hpp"
+
+constexpr size_t TARGET_FRAME_DURATION = (1.0 / 60.0) * 1000000UL;
 
 void DefaultFrontend::Start() {
     using namespace ftxui;
@@ -83,9 +87,12 @@ void DefaultFrontend::Start() {
 
     // Begin main frontend loop
     while (!loop.HasQuitted()) {
+        auto start = std::chrono::high_resolution_clock::now();
         loop.RunOnce();
         screen.RequestAnimationFrame();
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        auto end = std::chrono::high_resolution_clock::now();
+        const size_t frame_duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        std::this_thread::sleep_for(std::chrono::microseconds(TARGET_FRAME_DURATION - frame_duration));
 
         if (m_player.IsFinished()) {
             m_player.PlayRelative(1);

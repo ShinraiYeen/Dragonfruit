@@ -8,7 +8,7 @@
 #include "dragonfruit_engine/core/io/data_source.hpp"
 #include "dragonfruit_engine/core/parsers/wav_parser.hpp"
 
-Player::Player(const std::vector<std::filesystem::path>& song_files) : m_engine(100000), m_song_paths(song_files) {}
+Player::Player(const std::vector<std::filesystem::path>& song_files) : m_engine(10485760), m_song_paths(song_files) {}
 
 Player::~Player() {}
 
