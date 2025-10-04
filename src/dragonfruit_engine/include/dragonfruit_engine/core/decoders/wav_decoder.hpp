@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include "dragonfruit_engine/core/decoders/decoder.hpp"
 #include "dragonfruit_engine/core/engine_state.hpp"
 #include "dragonfruit_engine/core/parsers/wav_parser.hpp"
@@ -15,7 +13,7 @@ class WavDecoder final : public Decoder {
     void SeekImpl(double seconds) override;
 
    private:
-    std::optional<std::vector<uint8_t>> DecodeFrame() override;
+    std::vector<uint8_t> DecodeStep() override;
     WavParser m_parser;
     size_t m_cur_sample_data_offset;
 };

@@ -35,29 +35,17 @@ void StreamStateCallback(pa_stream* stream, void* userdata) {
 void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
     EngineState* state = static_cast<EngineState*>(userData);
 
-    std::vector<uint8_t> chunk;
-    chunk.reserve(length);
+    std::vector<uint8_t> data = state->buffer.Pop(length);
+    state->read_offset += data.size();
 
-    while (chunk.size() < length) {
-        std::optional<std::vector<uint8_t>> data = state->buffer.Pop();
-        if (!data.has_value()) {
-            if (state->decoder_finished.load()) {
-                // Decoder is finished
-                state->playing_finished.store(true);
-                chunk.insert(chunk.end(), length - chunk.size(), 0);
-                break;
-            } else {
-                // Underflow
-                chunk.insert(chunk.end(), length - chunk.size(), 0);
-                break;
-            }
-        }
-
-        chunk.insert(chunk.end(), data.value().begin(), data.value().end());
-        state->read_offset += data.value().size();
+    if (data.size() < length) {
+        // Underflow occurred or decoder has finished
+        Logger::Get()->debug("[Engine] Underflow occurred");
+        data.insert(data.end(), length - data.size(), 0);
+        if (state->decoder_finished.load()) state->playing_finished.store(true);
     }
 
-    pa_stream_write(stream, chunk.data(), chunk.size(), nullptr, 0, PA_SEEK_RELATIVE);
+    pa_stream_write(stream, data.data(), data.size(), nullptr, 0, PA_SEEK_RELATIVE);
 
     if (state->playing_finished.load()) pa_stream_cork(stream, 1, nullptr, nullptr);
 }

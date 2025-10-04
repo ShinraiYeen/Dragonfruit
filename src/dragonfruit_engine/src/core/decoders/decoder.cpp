@@ -3,7 +3,6 @@
 #include <pthread.h>
 
 #include <mutex>
-#include <optional>
 #include <thread>
 
 #include "dragonfruit_engine/core/buffer.hpp"
@@ -33,13 +32,13 @@ void Decoder::Start() {
 
             if (m_shutdown) break;
 
-            std::optional<std::vector<uint8_t>> frame = DecodeFrame();
+            std::vector<uint8_t> data = DecodeStep();
 
             // We should not hold onto the lock while we're attempting to push frames into the shared buffer. That is
             // just asking for a deadlock.
             lock.unlock();
 
-            if (!frame.has_value()) {
+            if (data.size() == 0) {
                 Logger::Get()->debug("[Decoder] Finished decoding");
                 m_state.decoder_finished.store(true);
 
@@ -50,7 +49,7 @@ void Decoder::Start() {
                 continue;
             }
 
-            m_state.buffer.Push(frame.value());
+            m_state.buffer.Push(data);
         }
     });
 }

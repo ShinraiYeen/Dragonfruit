@@ -12,16 +12,17 @@ WavDecoder::WavDecoder(EngineState& state, std::unique_ptr<DataSource> data_sour
     m_data_source->Seek(m_cur_sample_data_offset);
 }
 
-std::optional<std::vector<uint8_t>> WavDecoder::DecodeFrame() {
-    if (m_data_source->Tell() >= m_parser.SampleDataOffset() + m_parser.SampleDataSize()) {
-        return std::nullopt;
-    }
+std::vector<uint8_t> WavDecoder::DecodeStep() {
+    std::vector<uint8_t> data;
 
     const size_t frame_size = (m_parser.BitDepth() / 8) * m_parser.Channels();
-    std::vector<uint8_t> frame(frame_size);
-    m_data_source->Read(frame.data(), frame_size);
+    const size_t max_packet_size = frame_size * 2048;
+    const size_t remaining = m_parser.SampleDataSize() - (m_data_source->Tell() - m_parser.SampleDataOffset());
+    const size_t to_read = std::min(remaining, max_packet_size);
+    data.resize(to_read);
+    m_data_source->Read(data.data(), to_read);
 
-    return frame;
+    return data;
 }
 
 void WavDecoder::SeekImpl(double seconds) {

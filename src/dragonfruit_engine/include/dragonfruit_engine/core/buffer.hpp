@@ -2,14 +2,12 @@
 
 #include <condition_variable>
 #include <mutex>
-#include <optional>
-#include <queue>
 #include <vector>
 
 namespace dragonfruit {
 
 /**
- * @brief A thread-safe, producer blocking, consumer non-blocking queue.
+ * @brief A thread-safe, producer blocking, consumer non-blocking ring-buffer implementation for sharing PCM samples.
  */
 class Buffer {
    public:
@@ -27,7 +25,7 @@ class Buffer {
      * @brief This call is non-blocking. Pops the next value from the front of the queue. If there are no items in the
      * queue, std::nullopt will be returned. This must be handled appropriately.
      */
-    std::optional<std::vector<uint8_t>> Pop();
+    std::vector<uint8_t> Pop(size_t len);
 
     /**
      * @brief Clears the buffer entirely, removing all data from the internal queue.
@@ -40,10 +38,13 @@ class Buffer {
     void Abort(bool abort);
 
    private:
-    size_t m_capacity;
     std::mutex m_mutex;
     std::condition_variable m_cond_producer;
-    std::queue<std::vector<uint8_t>> m_queue;
+    std::vector<uint8_t> m_buffer;
+    size_t m_head = 0;      // Read head
+    size_t m_tail = 0;      // Write head
+    size_t m_size = 0;      // Current buffer fill size
+    size_t m_capacity = 0;  // Buffer capacity
     bool m_abort = false;
 };
 }  // namespace dragonfruit

@@ -28,7 +28,7 @@ class Decoder {
     Decoder(EngineState& state, std::unique_ptr<DataSource> data_source)
         : m_data_source(std::move(data_source)), m_state(state) {}
 
-    virtual std::optional<std::vector<uint8_t>> DecodeFrame() = 0;
+    virtual std::vector<uint8_t> DecodeStep() = 0;
     virtual void SeekImpl(double seconds) = 0;
 
     std::unique_ptr<DataSource> m_data_source;  // Data source must be owned by the decoder
