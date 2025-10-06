@@ -1,16 +1,5 @@
 #include "components/now_playing.hpp"
 
-std::string FmtCodeToString(dragonfruit::WavFormatCode code) {
-    switch (code) {
-        case dragonfruit::WavFormatCode::IEEE_FLOAT:
-            return "IEEE Float";
-        case dragonfruit::WavFormatCode::PCM:
-            return "PCM";
-        default:
-            return "---";
-    };
-}
-
 Element NowPlayingBase::OnRender() {
     auto parser = m_player.GetParser();
 
@@ -24,9 +13,6 @@ Element NowPlayingBase::OnRender() {
         paragraph(parser->Artist()) | hcenter,
         paragraph(parser->Album()) | hcenter,
         text(""),
-        // paragraph(std::format("WAV | {} {}-bit | {} Hz", FmtCodeToString(parser->Format()), par->BitDepth(),
-        //                       parser->SampleRate())) |
-        //     hcenter,
         filler(),
     });
 }
