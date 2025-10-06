@@ -1,4 +1,7 @@
+# Build files
 build
+
+# Configuration files
 .vscode
 .cache
 .zed
