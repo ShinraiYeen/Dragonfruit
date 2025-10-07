@@ -1,7 +1,5 @@
 #include "dragonfruit_engine/exception.hpp"
 
-#include <format>
-
 namespace dragonfruit {
 
 static const std::string ErrorCodeToString(ErrorCode code) {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <exception>
-#include <format>
 #include <string>
 
 namespace dragonfruit {

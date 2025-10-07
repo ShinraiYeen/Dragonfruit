@@ -1,5 +1,7 @@
 #include "dragonfruit_engine/core/io/file_data_source.hpp"
 
+#include <format>
+
 #include "dragonfruit_engine/exception.hpp"
 
 namespace dragonfruit {
