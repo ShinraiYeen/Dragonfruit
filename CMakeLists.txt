@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(dragonfruit-player VERSION 0.2.1 LANGUAGES CXX)
+project(dragonfruit-player VERSION 0.2.3 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -42,8 +42,12 @@ FetchContent_MakeAvailable(ftxui)
 add_subdirectory("src/dragonfruit_engine")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
-target_include_directories(${PROJECT_NAME} PRIVATE "src/dragonfruit_player/include" "${CMAKE_CURRENT_BINARY_DIR}")
-target_link_libraries(${PROJECT_NAME} PRIVATE dragonfruit-engine ftxui::component ftxui::screen ftxui::dom)
+target_include_directories(${PROJECT_NAME}
+    PRIVATE "src/dragonfruit_player/include" "${CMAKE_CURRENT_BINARY_DIR}"
+)
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE dragonfruit-engine ftxui::component ftxui::screen ftxui::dom
+)
 
 # Enable all warnings
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -Wpedantic)
@@ -77,6 +81,8 @@ else()
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
-set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+set(CPACK_PACKAGE_FILE_NAME
+    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}"
+)
 
 include(CPack)

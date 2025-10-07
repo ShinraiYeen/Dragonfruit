@@ -2,6 +2,9 @@
 
 #include <dragonfruit_engine/audio_engine.hpp>
 #include <filesystem>
+#include <vector>
+
+#include "dragonfruit_engine/core/parsers/wav_parser.hpp"
 
 /**
  * @brief Defines the main interface for interacting with the underlying dragonfruit audio engine. Frontends should use
@@ -96,13 +99,6 @@ class Player {
     inline int GetCurrentSongIdx() { return m_cur_song_idx; }
 
     /**
-     * @brief Get the currently playing song. This pointer will be empty if no song has been played yet.
-     *
-     * @return A shared pointer to the currently playing song.
-     */
-    inline std::shared_ptr<dragonfruit::Sound> GetCurrentSong() { return m_cur_sound; }
-
-    /**
      * @brief Shuffles the queue and restarts playback at the first song.
      *
      */
@@ -122,12 +118,13 @@ class Player {
      */
     inline double GetVolume() { return m_cur_volume; }
 
+    inline std::shared_ptr<dragonfruit::WavParser> GetParser() { return m_parser; }
+
    private:
     dragonfruit::AudioEngine m_engine;
     std::vector<std::filesystem::path> m_song_paths;
-
     int m_cur_song_idx = 0;
-    std::shared_ptr<dragonfruit::Sound> m_cur_sound;
+    std::shared_ptr<dragonfruit::WavParser> m_parser;
 
     double m_cur_volume = 1.0;
 };

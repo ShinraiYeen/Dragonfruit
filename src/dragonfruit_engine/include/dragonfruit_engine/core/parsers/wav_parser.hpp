@@ -1,60 +1,25 @@
 #pragma once
 
-#include <stdint.h>
-
-#include <fstream>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <vector>
+
+#include "dragonfruit_engine/core/io/data_source.hpp"
 
 namespace dragonfruit {
 
-enum class WavFormatCode { PCM, IEEE_FLOAT, EXTENSIBLE, UNKNOWN };
-
-enum class ChunkCode { FMT, LIST, DATA, UNKNOWN };
-
-struct ChunkHeader {
-    char id[4];
-    uint32_t size;
-} __attribute__((packed));
-
-struct FmtChunk {
-    uint16_t audio_format;
-    uint16_t num_channels;
-    uint32_t frequency;
-    uint32_t bytes_per_sec;
-    uint16_t bytes_per_bloc;
-    uint16_t bits_per_sample;
-} __attribute__((packed));
-
-struct FmtExtendedChunk {
-    uint16_t valid_bits_per_sample;
-    uint32_t channel_mask;
-    char sub_format[16];
-} __attribute__((packed));
-
-struct RiffChunk {
-    ChunkHeader header;
-    char wav_id[4];
-} __attribute__((packed));
-
-struct InfoChunk {
-    char info_id[4];
-};
-
-/**
- * @brief Parses, stores and manages the lifetime of a WAV file.
- *
- */
-class Sound {
+class WavParser {
    public:
+    enum class WavFormatCode { PCM, IEEE_FLOAT, EXTENSIBLE, UNKNOWN };
+    enum class ChunkCode { FMT, LIST, DATA, UNKNOWN };
+
     /**
      * @brief Construct a new Sound using a filepath to a WAV file to load.
      *
      * @param[in] filepath Filepath pointing to a valid WAV file.
      */
-    Sound(const std::string& filepath);
-    ~Sound();
+    WavParser(std::unique_ptr<DataSource>& data_source);
+    ~WavParser();
 
     /**
      * @brief Returns the number of channels.
@@ -76,20 +41,6 @@ class Sound {
      * @return The sample rate in Hz
      */
     inline uint32_t SampleRate() const { return m_sample_rate; }
-
-    /**
-     * @brief Returns a pointer to the sample data.
-     *
-     * @return Pointer to sample data.
-     */
-    inline const uint8_t* SampleData() const { return m_sample_data.data(); }
-
-    /**
-     * @brief Returns the size in bytes of the sample data.
-     *
-     * @return Size in bytes of the sample data.
-     */
-    inline uint32_t SampleDataSize() const { return m_sample_data.size(); }
 
     /**
      * @brief Returns the value of an INFO metadata tag if it exists. If it does not exist, returns an empty string.
@@ -150,13 +101,48 @@ class Sound {
 
     inline WavFormatCode Format() const { return m_format; }
 
+    inline size_t SampleDataOffset() const { return m_sample_data_offset; }
+
+    inline size_t SampleDataSize() const { return m_sample_data_size; }
+
+    inline size_t NumFrames() const { return m_sample_data_size / ((m_bit_depth / 8) * m_channels); }
+
    private:
-    bool ReadChunk(std::ifstream& file);
-    void ParseChunk(ChunkHeader header, std::ifstream& file);
-    void HandleFmtChunk(std::ifstream& file, size_t size);
-    void HandleDataChunk(std::ifstream& file, size_t size);
-    void HandleListChunk(std::ifstream& file, size_t size);
-    void HandleUnknownChunk(std::ifstream& file, size_t size);
+    struct ChunkHeader {
+        char id[4];
+        uint32_t size;
+    } __attribute__((packed));
+
+    struct FmtChunk {
+        uint16_t audio_format;
+        uint16_t num_channels;
+        uint32_t frequency;
+        uint32_t bytes_per_sec;
+        uint16_t bytes_per_bloc;
+        uint16_t bits_per_sample;
+    } __attribute__((packed));
+
+    struct FmtExtendedChunk {
+        uint16_t valid_bits_per_sample;
+        uint32_t channel_mask;
+        char sub_format[16];
+    } __attribute__((packed));
+
+    struct RiffChunk {
+        ChunkHeader header;
+        char wav_id[4];
+    } __attribute__((packed));
+
+    struct InfoChunk {
+        char info_id[4];
+    };
+
+    bool ReadChunk(std::unique_ptr<DataSource>& file);
+    void ParseChunk(ChunkHeader header, std::unique_ptr<DataSource>& file);
+    void HandleFmtChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleDataChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleListChunk(std::unique_ptr<DataSource>& file, size_t size);
+    void HandleUnknownChunk(std::unique_ptr<DataSource>& file, size_t size);
 
     std::unordered_map<std::string, std::string> m_info_tags;
 
@@ -165,7 +151,7 @@ class Sound {
     uint16_t m_channels;
     uint16_t m_bit_depth;
     WavFormatCode m_format;
-
-    std::vector<uint8_t> m_sample_data;
+    size_t m_sample_data_offset;
+    size_t m_sample_data_size;
 };
 }  // namespace dragonfruit

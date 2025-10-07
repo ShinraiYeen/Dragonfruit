@@ -1,18 +1,24 @@
 #include "dragonfruit_engine/audio_engine.hpp"
 
+#include <pulse/def.h>
 #include <pulse/error.h>
+#include <pulse/sample.h>
+#include <pulse/stream.h>
+#include <pulse/thread-mainloop.h>
 #include <pulse/volume.h>
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
-#include <thread>
+#include <vector>
 
+#include "dragonfruit_engine/core/buffer.hpp"
+#include "dragonfruit_engine/core/decoders/wav_decoder.hpp"
 #include "dragonfruit_engine/exception.hpp"
-#include "dragonfruit_engine/utils.hpp"
+#include "dragonfruit_engine/logging/logger.hpp"
 
 namespace dragonfruit {
 
+namespace {
 // Callback for context state changes
 void ContextStateCallback(pa_context* context, void* userdata) {
     (void)context;  // Suppress unused warning
@@ -27,17 +33,21 @@ void StreamStateCallback(pa_stream* stream, void* userdata) {
 
 // Stream write callback
 void StreamWriteCallback(pa_stream* stream, size_t length, void* userData) {
-    EngineState* audio = static_cast<EngineState*>(userData);
-    size_t remaining = audio->sound->SampleDataSize() - audio->offset;
-    size_t bytesToWrite = std::min(length, remaining);
+    EngineState* state = static_cast<EngineState*>(userData);
 
-    if (bytesToWrite > 0) {
-        pa_stream_write(stream, audio->sound->SampleData() + audio->offset, bytesToWrite, nullptr, 0, PA_SEEK_RELATIVE);
-        audio->offset += bytesToWrite;
-    } else {
-        audio->is_finished = true;
-        pa_stream_cork(stream, true, nullptr, nullptr);
+    std::vector<uint8_t> data = state->buffer.Pop(length);
+    state->read_offset += data.size();
+
+    if (data.size() < length) {
+        // Underflow occurred or decoder has finished
+        Logger::Get()->debug("[Engine] Underflow occurred");
+        data.insert(data.end(), length - data.size(), 0);
+        if (state->decoder_finished.load()) state->playing_finished.store(true);
     }
+
+    pa_stream_write(stream, data.data(), data.size(), nullptr, 0, PA_SEEK_RELATIVE);
+
+    if (state->playing_finished.load()) pa_stream_cork(stream, 1, nullptr, nullptr);
 }
 
 // Blocking call to wait for a stream to disconnect since pa_stream_disconnect is an async call.
@@ -58,11 +68,15 @@ void AwaitStreamDisconnect(pa_threaded_mainloop* mainloop, pa_stream* stream) {
     }
 }
 
-AudioEngine::AudioEngine() {
+}  // namespace
+
+AudioEngine::AudioEngine(const size_t buffer_size) : m_engine_state(buffer_size, m_sample_spec) {
+    Logger::Get()->info("[Engine] Initializing");
+
     // Initialize threaded mainloop
     m_mainloop = pa_threaded_mainloop_new();
     if (!m_mainloop) {
-        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to inqitialize pulse main loop");
+        throw Exception(ErrorCode::INTERNAL_ERROR, "Failed to initialize pulse main loop");
     }
 
     // Create context for threaded mainloop
@@ -103,46 +117,15 @@ AudioEngine::AudioEngine() {
         pa_threaded_mainloop_wait(m_mainloop);
     }
 
-    pa_threaded_mainloop_unlock(m_mainloop);
-}
+    // Create the main audio stream and hook the appropriate callbacks
 
-AudioEngine::~AudioEngine() {
-    pa_threaded_mainloop_lock(m_mainloop);
-
-    // Destroy stream
-    AwaitStreamDisconnect(m_mainloop, m_stream);
-
-    // Destroy the context (this is a blocking call, no awaiting required)
-    pa_context_disconnect(m_context);
-    pa_context_unref(m_context);
-    pa_threaded_mainloop_unlock(m_mainloop);
-
-    // Destroy the threaded mainloop
-    pa_threaded_mainloop_stop(m_mainloop);
-    pa_threaded_mainloop_free(m_mainloop);
-}
-
-void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
-    pa_threaded_mainloop_lock(m_mainloop);
-
-    // If there is already a stream setup, we will have to disconnect and create a new one
-
-    AwaitStreamDisconnect(m_mainloop, m_stream);
-    m_stream = nullptr;
-
-    // Setup stream
-    m_sample_spec.channels = sound->Channels();
-    m_sample_spec.format = utils::GetPulseFormat(sound->Format(), sound->BitDepth());
-    m_sample_spec.rate = sound->SampleRate();
+    m_sample_spec.channels = 2;
+    m_sample_spec.format = pa_sample_format::PA_SAMPLE_S16LE;
+    m_sample_spec.rate = 44100;
 
     if (m_sample_spec.format == pa_sample_format::PA_SAMPLE_INVALID) {
         throw Exception(ErrorCode::INVALID_FORMAT, "Invalid WAV format");
     }
-
-    // Setup internal engine state
-    m_engine_state.offset = 0;
-    m_engine_state.is_finished = false;
-    m_engine_state.sound = sound;
 
     // Create a new stream connect to the context and hook the state change and write callbacks for async functionality
     m_stream = pa_stream_new(m_context, "Playback", &m_sample_spec, nullptr);
@@ -153,7 +136,7 @@ void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
     if (pa_stream_connect_playback(
             m_stream, nullptr, nullptr,
             static_cast<pa_stream_flags_t>(PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE |
-                                           PA_STREAM_ADJUST_LATENCY),
+                                           PA_STREAM_ADJUST_LATENCY | PA_STREAM_START_CORKED),
             nullptr, nullptr) < 0) {
         throw Exception(ErrorCode::INTERNAL_ERROR, "Unable to connect pulse stream");
     }
@@ -178,13 +161,44 @@ void AudioEngine::PlayAsync(std::shared_ptr<Sound> sound) {
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
+AudioEngine::~AudioEngine() {
+    Logger::Get()->info("[Engine] Quitting");
+    pa_threaded_mainloop_lock(m_mainloop);
+
+    // Destroy stream
+    AwaitStreamDisconnect(m_mainloop, m_stream);
+
+    // Destroy the context (this is a blocking call, no awaiting required)
+    pa_context_disconnect(m_context);
+    pa_context_unref(m_context);
+    pa_threaded_mainloop_unlock(m_mainloop);
+
+    // Destroy the threaded mainloop
+    pa_threaded_mainloop_stop(m_mainloop);
+    pa_threaded_mainloop_free(m_mainloop);
+}
+
+void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
+    pa_threaded_mainloop_lock(m_mainloop);
+
+    m_decoder.reset(new WavDecoder(m_engine_state, std::move(data_source)));
+    m_decoder->Start();
+    m_engine_state.read_offset = 0;
+    m_engine_state.playing_finished.store(false);
+
+    pa_stream_cork(m_stream, 0, nullptr, nullptr);
+
+    pa_threaded_mainloop_unlock(m_mainloop);
+}
+
 void AudioEngine::Pause(bool pause) {
+    Logger::Get()->info("[Engine] Paused: {}", pause);
     pa_threaded_mainloop_lock(m_mainloop);
     pa_stream_cork(m_stream, pause, nullptr, nullptr);
     pa_threaded_mainloop_unlock(m_mainloop);
 }
 
-bool AudioEngine::IsFinished() { return m_engine_state.is_finished; }
+bool AudioEngine::IsFinished() { return m_engine_state.playing_finished.load(); }
 
 double AudioEngine::GetCurrentSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);
@@ -199,10 +213,10 @@ double AudioEngine::GetCurrentSongTime() {
         return 0.0;
     }
 
-    int64_t played_offset = static_cast<int64_t>(m_engine_state.offset) -
+    int64_t played_offset = static_cast<int64_t>(m_engine_state.read_offset) -
                             static_cast<int64_t>(timing_info->write_index - timing_info->read_index);
 
-    played_offset = std::clamp(played_offset, int64_t(0), static_cast<int64_t>(m_engine_state.sound->SampleDataSize()));
+    played_offset = std::clamp(played_offset, int64_t(0), static_cast<int64_t>(m_decoder->NumFrames() * 4));
 
     pa_threaded_mainloop_unlock(m_mainloop);
 
@@ -211,41 +225,25 @@ double AudioEngine::GetCurrentSongTime() {
 
 double AudioEngine::GetTotalSongTime() {
     pa_threaded_mainloop_lock(m_mainloop);
+    // TODO: Frame size is hard coded right now, must change later
     double total_song_time =
-        static_cast<double>(pa_bytes_to_usec(m_engine_state.sound->SampleDataSize(), &m_sample_spec)) / 1000000.0;
+        static_cast<double>(pa_bytes_to_usec(m_decoder->NumFrames() * 4, &m_sample_spec)) / 1000000.0;
     pa_threaded_mainloop_unlock(m_mainloop);
     return total_song_time;
 }
 
 void AudioEngine::Seek(double seconds) {
-    // Convert seconds into the amount of bytes to seek back
-    size_t bytes_per_second = pa_bytes_per_second(&m_sample_spec);
+    const size_t frame_size = pa_frame_size(&m_sample_spec);
+    const double song_time_seconds = GetTotalSongTime();
+    const double seconds_clamped = std::clamp(seconds, 0.0, song_time_seconds);
 
     pa_threaded_mainloop_lock(m_mainloop);
     pa_stream_cork(m_stream, true, nullptr, nullptr);
-    const pa_timing_info* timing_info = pa_stream_get_timing_info(m_stream);
 
-    // We haven't received a timing update from the server yet, therefore we cannot accurately seek. In this case, we
-    // return early. It is most likely this only occurs during edge cases, but we should check just in case.
-    if (!timing_info) {
-        pa_threaded_mainloop_unlock(m_mainloop);
-        return;
-    }
-    int64_t still_in_buffer = timing_info->write_index - timing_info->read_index;
+    const size_t frame_index = std::floor(seconds_clamped * m_sample_spec.rate);
+    m_engine_state.read_offset = frame_index * frame_size;
+    m_decoder->Seek(seconds_clamped);
 
-    double bytes_to_seek = seconds * bytes_per_second;
-    double current_offset = m_engine_state.offset - still_in_buffer;
-
-    // The new offset should be clamped between 0 (the start of the audio data) and the end of the audio data to ensure
-    // we do not accidentally set the offset to unreadable/uninitialized memory regions.
-    size_t new_offset = static_cast<size_t>(
-        std::clamp(current_offset + bytes_to_seek, 0.0, static_cast<double>(m_engine_state.sound->SampleDataSize())));
-
-    // Ensure the new offset is aligned to the frame size
-    new_offset = new_offset - (new_offset % pa_frame_size(&m_sample_spec));
-    m_engine_state.offset = new_offset;
-
-    // Flush the current buffer so that we start at our new offset
     pa_stream_flush(m_stream, nullptr, nullptr);
     pa_stream_cork(m_stream, false, nullptr, nullptr);
     pa_stream_update_timing_info(m_stream, nullptr, nullptr);
@@ -254,6 +252,7 @@ void AudioEngine::Seek(double seconds) {
 
 void AudioEngine::SetVolume(double volume) {
     double volume_clamped = std::clamp(volume, 0.0, 1.0);
+    Logger::Get()->debug("[Engine] Setting volume to {}", volume_clamped);
 
     pa_volume_t pa_volume = PA_VOLUME_NORM * volume_clamped;
     pa_cvolume cvol;

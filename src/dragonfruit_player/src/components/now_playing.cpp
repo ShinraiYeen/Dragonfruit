@@ -1,31 +1,18 @@
 #include "components/now_playing.hpp"
 
-std::string FmtCodeToString(dragonfruit::WavFormatCode code) {
-    switch (code) {
-        case dragonfruit::WavFormatCode::IEEE_FLOAT:
-            return "IEEE Float";
-        case dragonfruit::WavFormatCode::PCM:
-            return "PCM";
-        default:
-            return "---";
-    };
-}
-
 Element NowPlayingBase::OnRender() {
-    std::shared_ptr<dragonfruit::Sound> song = m_player.GetCurrentSong();
+    auto parser = m_player.GetParser();
 
     // If the song doesn't have a name (metadata not found) revert to the file name
-    std::string song_name =
-        song->Name().empty() ? m_player.GetSongQueue()[m_player.GetCurrentSongIdx()].filename().string() : song->Name();
+    std::string song_name = parser->Name() == ""
+                                ? m_player.GetSongQueue()[m_player.GetCurrentSongIdx()].filename().string()
+                                : parser->Name();
     return vbox({
         filler(),
         paragraph(song_name) | hcenter,
-        paragraph(song->Artist()) | hcenter,
-        paragraph(song->Album()) | hcenter,
+        paragraph(parser->Artist()) | hcenter,
+        paragraph(parser->Album()) | hcenter,
         text(""),
-        paragraph(std::format("WAV | {} {}-bit | {} Hz", FmtCodeToString(song->Format()), song->BitDepth(),
-                              song->SampleRate())) |
-            hcenter,
         filler(),
     });
 }

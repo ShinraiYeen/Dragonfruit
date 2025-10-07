@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#include <dragonfruit_engine/core/decoders/wav_decoder.hpp>
+#include <dragonfruit_engine/core/parsers/wav_parser.hpp>
+
 #include "frontends/default_frontend.hpp"
 #include "player.hpp"
 #include "version.hpp"
@@ -67,8 +70,8 @@ int main(int argc, char** argv) {
     }
 
     Player player(song_paths);
-    std::unique_ptr<Frontend> frontend(new DefaultFrontend(player));
-    frontend->Start();
+    DefaultFrontend frontend(player);
+    frontend.Start();
 
     return 0;
 }
