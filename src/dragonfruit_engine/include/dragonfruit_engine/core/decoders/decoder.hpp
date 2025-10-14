@@ -25,13 +25,13 @@ class Decoder {
     virtual size_t NumFrames() = 0;
 
    protected:
-    Decoder(EngineState& state, std::unique_ptr<DataSource> data_source)
+    Decoder(EngineState& state, std::shared_ptr<DataSource> data_source)
         : m_data_source(std::move(data_source)), m_state(state) {}
 
     virtual std::vector<uint8_t> DecodeStep() = 0;
     virtual void SeekImpl(double seconds) = 0;
 
-    std::unique_ptr<DataSource> m_data_source;  // Data source must be owned by the decoder
+    std::shared_ptr<DataSource> m_data_source;  // Data source must be owned by the decoder
 
    private:
     void Pause(bool pause);

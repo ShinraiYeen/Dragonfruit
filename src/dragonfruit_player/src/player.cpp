@@ -5,8 +5,7 @@
 #include <memory>
 #include <random>
 
-#include "dragonfruit_engine/core/io/data_source.hpp"
-#include "dragonfruit_engine/core/parsers/wav_parser.hpp"
+#include "dragonfruit_engine/core/parsers/tag_parser.hpp"
 
 Player::Player(const std::vector<std::filesystem::path>& song_files) : m_engine(10485760), m_song_paths(song_files) {}
 
@@ -19,8 +18,9 @@ void Player::Play(int idx) {
     m_cur_song_idx = clamped_idx;
 
     // Load in the new song
-    auto data = std::unique_ptr<dragonfruit::DataSource>(new dragonfruit::FileDataSource(m_song_paths[m_cur_song_idx]));
-    m_parser.reset(new dragonfruit::WavParser(data));
+    auto data = std::make_shared<dragonfruit::FileDataSource>(m_song_paths[m_cur_song_idx]);
+    dragonfruit::TagParser parser(*data);
+    m_cur_metadata = parser.ExportMetadata();
     m_engine.PlayAsync(std::move(data));
 }
 
