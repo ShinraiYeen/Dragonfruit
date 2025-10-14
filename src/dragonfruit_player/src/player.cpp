@@ -19,8 +19,8 @@ void Player::Play(int idx) {
 
     // Load in the new song
     auto data = std::make_shared<dragonfruit::FileDataSource>(m_song_paths[m_cur_song_idx]);
-    m_parser = std::make_shared<dragonfruit::TagParser>(*data);
-    m_cur_metadata = m_parser->ExportMetadata();
+    dragonfruit::TagParser parser(*data);
+    m_cur_metadata = parser.ExportMetadata();
     m_engine.PlayAsync(std::move(data));
 }
 
