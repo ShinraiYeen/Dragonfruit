@@ -24,14 +24,6 @@ class WavParser : public Parser {
 
     std::string GetTagValue(std::string tag) const;
 
-    // inline std::string Title() const { return Metadata("INAM"); }
-    // inline std::string Album() const { return Metadata("IPRD"); }
-    // inline std::string Artist() const { return Metadata("IART"); }
-    // inline std::string Comment() const { return Metadata("ICMT"); }
-    // inline std::string Year() const { return Metadata("ICRD"); }
-    // inline std::string Genre() const { return Metadata("IGNR"); }
-    // inline std::string Track() const { return Metadata("ITRK"); }
-
     inline WavFormatCode Format() const { return m_format; }
     inline size_t SampleDataOffset() const { return m_sample_data_offset; }
     inline size_t SampleDataSize() const { return m_sample_data_size; }
