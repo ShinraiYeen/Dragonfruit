@@ -3,8 +3,8 @@
 #include "dragonfruit_engine/logging/logger.hpp"
 
 namespace dragonfruit {
-WavDecoder::WavDecoder(EngineState& state, std::unique_ptr<DataSource> data_source)
-    : Decoder(state, std::move(data_source)), m_parser(m_data_source) {
+WavDecoder::WavDecoder(EngineState& state, std::shared_ptr<DataSource> data_source)
+    : Decoder(state, std::move(data_source)), m_parser(*m_data_source) {
     Logger::Get()->info("[WAV Decoder] Initialized with {}Hz/{} bit/{}-channel", m_parser.SampleRate(),
                         m_parser.BitDepth(), m_parser.Channels());
 

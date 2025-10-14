@@ -16,6 +16,8 @@ class FileDataSource final : public DataSource {
     size_t Size() override;
     bool EndOfFile() override;
 
+    inline std::string Filepath() const { return m_filepath; }
+
    private:
     std::ifstream m_file;
     size_t m_file_size;

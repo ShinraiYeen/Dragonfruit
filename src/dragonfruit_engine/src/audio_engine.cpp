@@ -178,7 +178,7 @@ AudioEngine::~AudioEngine() {
     pa_threaded_mainloop_free(m_mainloop);
 }
 
-void AudioEngine::PlayAsync(std::unique_ptr<DataSource> data_source) {
+void AudioEngine::PlayAsync(std::shared_ptr<DataSource> data_source) {
     pa_threaded_mainloop_lock(m_mainloop);
 
     m_decoder.reset(new WavDecoder(m_engine_state, std::move(data_source)));

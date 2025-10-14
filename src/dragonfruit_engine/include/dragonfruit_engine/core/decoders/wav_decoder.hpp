@@ -7,7 +7,7 @@
 namespace dragonfruit {
 class WavDecoder final : public Decoder {
    public:
-    WavDecoder(EngineState& state, std::unique_ptr<DataSource> data_source);
+    WavDecoder(EngineState& state, std::shared_ptr<DataSource> data_source);
     ~WavDecoder();
     size_t NumFrames() override;
     void SeekImpl(double seconds) override;
