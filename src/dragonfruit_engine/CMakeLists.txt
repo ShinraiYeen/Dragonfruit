@@ -3,15 +3,6 @@ project(dragonfruit-engine VERSION 0.1 LANGUAGES CXX)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(PULSEAUDIO REQUIRED libpulse)
 
-# Install spdlog
-include(FetchContent)
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.15.3
-)
-FetchContent_MakeAvailable(spdlog)
-
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/*.cpp"
 )

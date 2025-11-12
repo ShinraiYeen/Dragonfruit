@@ -4,18 +4,19 @@ project(dragonfruit-player VERSION 0.2.3 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
 endif()
 
 # Display build configuration
-message(STATUS "${PROJECT_NAME} build settings:")
-message(STATUS "    Project version: ${PROJECT_VERSION}")
-message(STATUS "    Compiler: ${CMAKE_CXX_COMPILER}")
-message(STATUS "    Build Type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "    Cmake Version: ${CMAKE_VERSION}")
-message(STATUS "    System: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "    Processor: ${CMAKE_SYSTEM_PROCESSOR}")
+message(STATUS "${PROJECT_NAME} options:")
+message(STATUS "    Project version:    ${PROJECT_VERSION}")
+message(STATUS "    Compiler:           ${CMAKE_CXX_COMPILER}")
+message(STATUS "    Build Type:         ${CMAKE_BUILD_TYPE}")
+message(STATUS "    Cmake Version:      ${CMAKE_VERSION}")
+message(STATUS "    System:             ${CMAKE_SYSTEM_NAME}")
+message(STATUS "    Processor:          ${CMAKE_SYSTEM_PROCESSOR}")
 
 # Generate version code
 configure_file(
@@ -28,17 +29,11 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "src/dragonfruit_player/src/*.cpp"
 )
 
-include(FetchContent)
-FetchContent_Declare(ftxui
-  GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
-  GIT_TAG v6.1.9
-)
+set(FTXUI_ENABLE_INSTALL OFF)
+set(FTXUI_QUIET ON)
 
-# We do not want to install FTXUI headers/libraries. Disabling that here.
-set(FTXUI_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(ftxui)
-
+add_subdirectory("external/ftxui")
+add_subdirectory("external/spdlog")
 add_subdirectory("src/dragonfruit_engine")
 
 add_executable(${PROJECT_NAME} ${SOURCES})
