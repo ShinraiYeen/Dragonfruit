@@ -1,5 +1,7 @@
 #include "components/mini_player.hpp"
 
+#include <ftxui/dom/elements.hpp>
+
 #include "components/playing_indicator.hpp"
 #include "components/progress_animations.hpp"
 
@@ -23,7 +25,8 @@ Element MiniPlayerBase::OnRender() {
     size_t total_songs = m_player.GetSongQueue().size();
     size_t song_idx = m_player.GetCurrentSongIdx();
 
-    std::string song_name = m_player.GetSongQueue()[song_idx].filename().string();
+    std::string song_name = m_player.GetCurMetadata().title;
+    std::string artist_name = m_player.GetCurMetadata().artist;
 
     Decorator progress_bar_decorator = color(LinearGradient(Color::CornflowerBlue, Color::BlueViolet));
 
@@ -35,7 +38,9 @@ Element MiniPlayerBase::OnRender() {
         hbox({
             text(FormatSeconds(song_time) + "/" + FormatSeconds(total_song_time)),
             separatorEmpty(),
-            text(std::format("{} [{}/{}]", song_name, song_idx + 1, total_songs)) | flex_shrink,
+            text(std::format("{} - {}", artist_name, song_name)) | color(Color::LightSlateGrey) | flex_shrink,
+            separatorEmpty(),
+            text(std::format("[{}/{}]", song_idx + 1, total_songs)) | color(Color::LightSlateGrey) | flex_shrink,
             filler(),
             play_indicator,
             separatorEmpty(),
